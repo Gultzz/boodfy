@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import { useState, useRef, useEffect, useLayoutEffect, useCallback, useMemo } from 'react';
 import { Document, Page as PdfPage } from 'react-pdf';
 import { AlertCircle } from 'lucide-react';
 import type { FitMode } from '@/types';
@@ -38,12 +38,17 @@ export function ReaderViewport({
   const updateDimensions = useCallback(() => {
     if (!containerRef.current) return;
     const { clientWidth, clientHeight } = containerRef.current;
-    setPageWidth(clientWidth - 48);
-    setPageHeight(clientHeight - 48);
+    if (clientWidth > 48 && clientHeight > 48) {
+      setPageWidth(clientWidth - 48);
+      setPageHeight(clientHeight - 48);
+    }
   }, []);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     updateDimensions();
+  }, [updateDimensions]);
+
+  useEffect(() => {
     window.addEventListener('resize', updateDimensions);
     return () => window.removeEventListener('resize', updateDimensions);
   }, [updateDimensions]);
@@ -81,13 +86,20 @@ export function ReaderViewport({
             }
           >
             <PdfPage
+              key={`page-${currentPage}`}
               pageNumber={currentPage}
               height={fitMode === 'height' && pageHeight ? Math.max(pageHeight * zoom, 100) : undefined}
               width={fitMode === 'width' && pageWidth ? Math.max(pageWidth * zoom, 100) : undefined}
               scale={fitMode === 'manual' ? zoom : undefined}
               renderAnnotationLayer={false}
-              renderTextLayer={true}
+              renderTextLayer={false}
               className="pdf-page-canvas"
+              loading={
+                <div className="spinner-container">
+                  <div className="spinner" />
+                </div>
+              }
+              onLoadError={(err) => console.error('Erro ao carregar página do PDF:', err)}
               onRenderError={(err) => console.error('Erro ao renderizar canvas da página PDF:', err)}
             />
           </Document>
@@ -96,4 +108,3 @@ export function ReaderViewport({
     </div>
   );
 }
-

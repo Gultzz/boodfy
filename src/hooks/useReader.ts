@@ -29,6 +29,7 @@ export function useReader({ book, onBack }: UseReaderProps) {
     if (!book) return;
     setLoading(true);
     setError(null);
+    setPdfData(null);
 
     (async () => {
       try {
@@ -104,10 +105,14 @@ export function useReader({ book, onBack }: UseReaderProps) {
     (numPages: number) => {
       setTotalPages(numPages);
       if (book) {
-        libraryService.updateProgress(book.id, currentPage, numPages);
+        setCurrentPage((prev) => {
+          const clamped = Math.max(1, Math.min(prev, numPages));
+          libraryService.updateProgress(book.id, clamped, numPages);
+          return clamped;
+        });
       }
     },
-    [book, currentPage],
+    [book],
   );
 
   const toggleFullscreen = useCallback(async () => {

@@ -1,5 +1,4 @@
 import { useState, useRef } from 'react';
-import { pdfjs } from 'react-pdf';
 import { useReader } from '@/hooks/useReader';
 import { ReaderHeader } from './ReaderHeader';
 import { ReaderViewport } from './ReaderViewport';
@@ -9,25 +8,6 @@ import type { Book } from '@/types';
 import './ReaderPage.css';
 import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
 import 'react-pdf/dist/esm/Page/TextLayer.css';
-
-// Configure pdfjs worker safely for both dev (http) and prod (file://)
-if (typeof window !== 'undefined') {
-  if (window.location.origin && window.location.origin !== 'null') {
-    pdfjs.GlobalWorkerOptions.workerSrc = new URL(
-      '/pdf.worker.min.mjs',
-      window.location.origin,
-    ).toString();
-  } else {
-    try {
-      pdfjs.GlobalWorkerOptions.workerSrc = new URL(
-        'pdf.worker.min.mjs',
-        window.location.href,
-      ).toString();
-    } catch {
-      pdfjs.GlobalWorkerOptions.workerSrc = './pdf.worker.min.mjs';
-    }
-  }
-}
 
 interface ReaderPageProps {
   book: Book;

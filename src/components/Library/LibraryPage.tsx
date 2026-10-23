@@ -15,7 +15,7 @@ interface LibraryPageProps {
   onNavigate?: (page: Page) => void;
 }
 
-export function LibraryPage({ onOpenBook, onNavigate }: LibraryPageProps) {
+export function LibraryPage({ onOpenBook }: LibraryPageProps) {
   const loading = useLibraryStore((s) => s.loading);
   const loadLibrary = useLibraryStore((s) => s.loadLibrary);
   const contextMenu = useLibraryStore((s) => s.contextMenu);

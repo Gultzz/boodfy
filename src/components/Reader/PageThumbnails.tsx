@@ -50,10 +50,12 @@ export function PageThumbnails({
                     loading={<div className="thumb-loading" />}
                   >
                     <PdfPage
+                      key={`thumb-${pageNum}`}
                       pageNumber={pageNum}
                       width={110}
                       renderAnnotationLayer={false}
                       renderTextLayer={false}
+                      loading={<div className="thumb-loading" />}
                     />
                   </Document>
                 )}

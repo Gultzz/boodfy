@@ -22,8 +22,6 @@ O **BooklyPDF** é um aplicativo desktop completo e de alto desempenho para leit
 
 - **ESLint 9 (Flat Config)**: Análise estática de código com regras do TypeScript e React Hooks.
 - **Prettier**: Padronização e formatação automática de código.
-- **Vitest + Testing Library**: Testes unitários e de integração rápidos em ambiente JSDOM.
-- **Playwright**: Testes E2E (End-to-End) para validação da interface.
 - **TypeScript**: Verificação estrita de tipagem (`tsc --noEmit`).
 
 ---
@@ -45,13 +43,7 @@ cmd /c "npm run lint"
 # Formatação de Código
 cmd /c "npm run format"
 
-# Testes Unitários e de Integração
-cmd /c "npm run test"
-
-# Testes End-to-End
-cmd /c "npm run test:e2e"
-
-# Executar todas as validações de qualidade
+# Executar verificações de código (Typecheck + Lint)
 cmd /c "npm run check-all"
 
 # Iniciar em Modo de Desenvolvimento (Desktop)
