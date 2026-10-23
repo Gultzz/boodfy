@@ -1,9 +1,9 @@
 .book-list-item {
   display: grid;
-  grid-template-columns: 36px 1fr 120px 80px 100px 100px;
+  grid-template-columns: 40px 1fr 120px 80px 100px 100px;
   align-items: center;
   gap: 12px;
-  padding: 10px 16px;
+  padding: 8px 16px;
   border-radius: var(--radius-md);
   cursor: pointer;
   text-align: left;
@@ -19,11 +19,25 @@
   opacity: 0.6;
 }
 
-.book-list-icon {
+.book-list-cover {
+  width: 40px;
+  height: 54px;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background-color: var(--bg-tertiary);
   display: flex;
   align-items: center;
   justify-content: center;
   color: var(--text-tertiary);
+  flex-shrink: 0;
+}
+
+.book-list-cover-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center top;
+  display: block;
 }
 
 .book-list-title {

@@ -1,6 +1,9 @@
 import { BookOpen, Search, Plus, FolderOpen, RefreshCw, History, Settings } from 'lucide-react';
 import { useLibraryStore } from '@/stores/useLibraryStore';
 import { useAppStore } from '@/stores/useAppStore';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { ICON_MD } from '@/components/ui/icon';
 
 export function LibraryHeader() {
   const search = useLibraryStore((s) => s.search);
@@ -12,58 +15,59 @@ export function LibraryHeader() {
   const navigateTo = useAppStore((s) => s.navigateTo);
 
   return (
-    <header className="library-header">
-      <div className="library-header-left">
-        <h1 className="library-title">
-          <BookOpen size={24} />
+    <header className="app-header library-header">
+      <div className="app-header-left">
+        <h1 className="app-header-title">
+          <BookOpen size={ICON_MD} />
           BooklyPDF
         </h1>
       </div>
       <div className="library-header-center">
         <div className="search-box">
-          <Search size={16} className="search-icon" />
-          <input
-            type="text"
-            className="input search-input"
+          <Search size={ICON_MD} className="search-icon" />
+          <Input
+            className="search-input"
             placeholder="Pesquisar livros..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
       </div>
-      <div className="library-header-right">
-        <button className="btn btn-primary" onClick={addFiles} title="Adicionar PDFs">
-          <Plus size={16} />
+      <div className="app-header-right">
+        <Button onClick={addFiles} title="Adicionar PDFs">
+          <Plus size={ICON_MD} />
           Adicionar
-        </button>
-        <button className="btn btn-ghost btn-icon" onClick={addFolder} title="Adicionar pasta">
-          <FolderOpen size={18} />
-        </button>
+        </Button>
+        <Button variant="ghost" size="icon" onClick={addFolder} title="Adicionar pasta">
+          <FolderOpen size={ICON_MD} />
+        </Button>
         {watchFolder && (
-          <button
-            className="btn btn-ghost btn-icon"
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={refreshWatchFolder}
             title="Atualizar pasta monitorada"
           >
-            <RefreshCw size={18} />
-          </button>
+            <RefreshCw size={ICON_MD} />
+          </Button>
         )}
-        <button
-          className="btn btn-ghost btn-icon"
+        <Button
+          variant="ghost"
+          size="icon"
           onClick={() => navigateTo('history')}
           title="Histórico"
         >
-          <History size={18} />
-        </button>
-        <button
-          className="btn btn-ghost btn-icon"
+          <History size={ICON_MD} />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
           onClick={() => navigateTo('settings')}
           title="Configurações"
         >
-          <Settings size={18} />
-        </button>
+          <Settings size={ICON_MD} />
+        </Button>
       </div>
     </header>
   );
 }
-

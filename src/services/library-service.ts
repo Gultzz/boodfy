@@ -1,5 +1,8 @@
 import { storage } from './storage';
+import { generatePdfCover } from './cover-service';
 import type { Book, HistoryEntry } from '@/types';
+
+const coverInFlight = new Set<string>();
 
 function generateId(): string {
   return Date.now().toString(36) + Math.random().toString(36).substring(2, 9);
@@ -68,8 +71,27 @@ export const libraryService = {
     const newPath = await window.electronAPI.relocateFile();
     if (!newPath) return null;
 
-    await this.updateBook(bookId, { filePath: newPath });
+    await this.updateBook(bookId, { filePath: newPath, coverDataUrl: null });
     return newPath;
+  },
+
+  async generateCoverIfNeeded(book: Book): Promise<Book> {
+    if (book.coverDataUrl || coverInFlight.has(book.id)) return book;
+    coverInFlight.add(book.id);
+    try {
+      const result = await generatePdfCover(book.filePath);
+      if (!result) return book;
+
+      const updates: Partial<Book> = { coverDataUrl: result.coverDataUrl };
+      if (!book.totalPages) {
+        updates.totalPages = result.totalPages;
+      }
+
+      await this.updateBook(book.id, updates);
+      return { ...book, ...updates };
+    } finally {
+      coverInFlight.delete(book.id);
+    }
   },
 
   async importCopy(bookId: string): Promise<string | null> {

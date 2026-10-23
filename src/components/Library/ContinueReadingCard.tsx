@@ -10,6 +10,9 @@ export function ContinueReadingCard({ book, onOpenBook }: ContinueReadingCardPro
   return (
     <section className="continue-section">
       <button className="continue-card" onClick={() => onOpenBook(book)}>
+        {book.coverDataUrl && (
+          <img src={book.coverDataUrl} alt="" className="continue-cover" />
+        )}
         <div className="continue-info">
           <span className="continue-label">Continuar leitura</span>
           <span className="continue-title">{book.title}</span>

@@ -27,6 +27,7 @@ interface LibraryState {
 
   getFilteredBooks: () => Book[];
   getLastReadBook: () => Book | null;
+  ensureMissingCovers: () => Promise<void>;
 }
 
 export const useLibraryStore = create<LibraryState>((set, get) => ({
@@ -57,11 +58,41 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
         return book;
       });
       set({ library: { ...lib, books: updatedBooks }, progress: prog });
+      void get().ensureMissingCovers();
     } catch (err) {
       console.error('Erro ao carregar biblioteca:', err);
     } finally {
       set({ loading: false });
     }
+  },
+
+  ensureMissingCovers: async () => {
+    const pending = get().library.books.filter((book) => !book.coverDataUrl);
+    if (pending.length === 0) return;
+
+    const queue = [...pending];
+    const workerCount = Math.min(2, queue.length);
+
+    const worker = async () => {
+      while (queue.length > 0) {
+        const book = queue.shift();
+        if (!book) break;
+
+        const updated = await libraryService.generateCoverIfNeeded(book);
+        if (!updated.coverDataUrl) continue;
+
+        set((state) => ({
+          library: {
+            ...state.library,
+            books: state.library.books.map((item) =>
+              item.id === updated.id ? { ...item, ...updated } : item,
+            ),
+          },
+        }));
+      }
+    };
+
+    await Promise.all(Array.from({ length: workerCount }, () => worker()));
   },
 
   addFiles: async () => {

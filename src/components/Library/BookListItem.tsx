@@ -35,8 +35,14 @@ export function BookListItem({ book, onClick, onContextMenu }: BookListItemProps
       onClick={fileAvailable ? onClick : undefined}
       onContextMenu={onContextMenu}
     >
-      <div className="book-list-icon">
-        {fileAvailable ? <BookOpen size={20} /> : <FileWarning size={20} />}
+      <div className="book-list-cover">
+        {book.coverDataUrl ? (
+          <img src={book.coverDataUrl} alt="" className="book-list-cover-img" />
+        ) : fileAvailable ? (
+          <BookOpen size={18} />
+        ) : (
+          <FileWarning size={18} />
+        )}
       </div>
       <div className="book-list-title truncate">{book.title}</div>
       <div className="book-list-progress">

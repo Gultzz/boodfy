@@ -1,5 +1,7 @@
 import { Grid3x3, List } from 'lucide-react';
 import { useLibraryStore } from '@/stores/useLibraryStore';
+import { Button } from '@/components/ui/button';
+import { ICON_MD } from '@/components/ui/icon';
 import type { FilterMode, SortMode } from '@/types';
 
 const FILTERS: { key: FilterMode; label: string }[] = [
@@ -26,11 +28,13 @@ export function LibraryToolbar() {
 
   return (
     <div className="library-toolbar">
-      <div className="filter-tabs">
+      <div className="tabs-list" role="tablist">
         {FILTERS.map((f) => (
           <button
             key={f.key}
-            className={`filter-tab ${filter === f.key ? 'active' : ''}`}
+            role="tab"
+            aria-selected={filter === f.key}
+            className={`tabs-trigger ${filter === f.key ? 'active' : ''}`}
             onClick={() => setFilter(f.key)}
           >
             {f.label}
@@ -51,24 +55,27 @@ export function LibraryToolbar() {
           ))}
         </select>
 
-        <div className="view-toggle">
-          <button
-            className={`btn btn-icon btn-ghost ${viewMode === 'grid' ? 'active' : ''}`}
+        <div className="toggle-group">
+          <Button
+            variant="ghost"
+            size="icon"
+            className={viewMode === 'grid' ? 'active' : ''}
             onClick={() => setViewMode('grid')}
             title="Visualização em grade"
           >
-            <Grid3x3 size={18} />
-          </button>
-          <button
-            className={`btn btn-icon btn-ghost ${viewMode === 'list' ? 'active' : ''}`}
+            <Grid3x3 size={ICON_MD} />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className={viewMode === 'list' ? 'active' : ''}
             onClick={() => setViewMode('list')}
             title="Visualização em lista"
           >
-            <List size={18} />
-          </button>
+            <List size={ICON_MD} />
+          </Button>
         </div>
       </div>
     </div>
   );
 }
-
