@@ -1,3 +1,10 @@
+.context-menu-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: transparent;
+}
+
 .context-menu {
   background-color: var(--bg-secondary);
   border: 1px solid var(--border);
@@ -6,6 +13,7 @@
   min-width: 200px;
   padding: 4px;
   animation: fadeIn var(--transition-fast);
+  z-index: 1001;
 }
 
 .context-menu-item {
@@ -19,6 +27,9 @@
   color: var(--text-primary);
   text-align: left;
   transition: background-color var(--transition-fast);
+  background: none;
+  border: none;
+  cursor: pointer;
 }
 
 .context-menu-item:hover {
@@ -37,14 +48,4 @@
   height: 1px;
   background-color: var(--border-light);
   margin: 4px 0;
-}
-
-.context-menu-confirm {
-  padding: 8px;
-}
-
-.context-menu-confirm p {
-  font-size: 13px;
-  margin-bottom: 8px;
-  color: var(--text-secondary);
 }

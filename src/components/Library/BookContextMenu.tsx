@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
-import { Trash2, MapPin, Copy } from 'lucide-react';
+import { useEffect, useRef } from 'react';
+import { Pencil, MapPin, Copy, Trash2 } from 'lucide-react';
 import { libraryService } from '@/services/library-service';
 import type { Book } from '@/types';
 import './BookContextMenu.css';
@@ -9,7 +9,8 @@ interface BookContextMenuProps {
   x: number;
   y: number;
   onClose: () => void;
-  onRemove: (bookId: string, deleteFile: boolean) => void;
+  onRename: (book: Book) => void;
+  onRemove: (book: Book) => void;
   onRelocate: (bookId: string) => void;
 }
 
@@ -18,11 +19,11 @@ export function BookContextMenu({
   x,
   y,
   onClose,
+  onRename,
   onRemove,
   onRelocate,
 }: BookContextMenuProps) {
   const menuRef = useRef<HTMLDivElement>(null);
-  const [confirmDelete, setConfirmDelete] = useState(false);
 
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
@@ -49,59 +50,75 @@ export function BookContextMenu({
     zIndex: 1001,
   };
 
-  const handleImportCopy = async () => {
+  const handleImportCopy = async (e: React.MouseEvent) => {
+    e.stopPropagation();
     await libraryService.importCopy(book.id);
     onClose();
   };
 
-  if (confirmDelete) {
-    return (
-      <div ref={menuRef} className="context-menu" style={style}>
-        <div className="context-menu-confirm">
-          <p>
-            Remover <strong>{book.title}</strong> da biblioteca?
-          </p>
-          {book.isManaged && (
-            <button
-              className="context-menu-item context-menu-item-danger"
-              onClick={() => onRemove(book.id, true)}
-            >
-              <Trash2 size={14} />
-              Remover e apagar arquivo
-            </button>
-          )}
-          <button className="context-menu-item" onClick={() => onRemove(book.id, false)}>
-            <Trash2 size={14} />
-            Remover apenas da biblioteca
-          </button>
-          <button className="context-menu-item" onClick={() => setConfirmDelete(false)}>
-            Cancelar
-          </button>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div ref={menuRef} className="context-menu" style={style}>
-      <button className="context-menu-item" onClick={() => onRelocate(book.id)}>
-        <MapPin size={14} />
-        Localizar arquivo
-      </button>
-      {!book.isManaged && (
-        <button className="context-menu-item" onClick={handleImportCopy}>
-          <Copy size={14} />
-          Importar cópia
-        </button>
-      )}
-      <div className="context-menu-divider" />
-      <button
-        className="context-menu-item context-menu-item-danger"
-        onClick={() => setConfirmDelete(true)}
+    <>
+      <div
+        className="context-menu-backdrop"
+        onClick={(e) => {
+          e.stopPropagation();
+          onClose();
+        }}
+      />
+      <div
+        ref={menuRef}
+        className="context-menu"
+        style={style}
+        onClick={(e) => e.stopPropagation()}
       >
-        <Trash2 size={14} />
-        Remover da biblioteca
-      </button>
-    </div>
+        <button
+          type="button"
+          className="context-menu-item"
+          onClick={(e) => {
+            e.stopPropagation();
+            onClose();
+            onRename(book);
+          }}
+        >
+          <Pencil size={14} />
+          Renomear
+        </button>
+
+        <button
+          type="button"
+          className="context-menu-item"
+          onClick={(e) => {
+            e.stopPropagation();
+            onClose();
+            onRelocate(book.id);
+          }}
+        >
+          <MapPin size={14} />
+          Localizar arquivo
+        </button>
+
+        {!book.isManaged && (
+          <button type="button" className="context-menu-item" onClick={handleImportCopy}>
+            <Copy size={14} />
+            Importar cópia
+          </button>
+        )}
+
+        <div className="context-menu-divider" />
+
+        <button
+          type="button"
+          className="context-menu-item context-menu-item-danger"
+          onClick={(e) => {
+            e.stopPropagation();
+            onClose();
+            onRemove(book);
+          }}
+        >
+          <Trash2 size={14} />
+          Remover da biblioteca
+        </button>
+      </div>
+    </>
   );
 }

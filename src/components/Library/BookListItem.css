@@ -1,6 +1,6 @@
 .book-list-item {
   display: grid;
-  grid-template-columns: 40px 1fr 120px 80px 100px 100px;
+  grid-template-columns: 40px 1fr 120px 80px 100px 100px 32px;
   align-items: center;
   gap: 12px;
   padding: 8px 16px;
@@ -62,4 +62,29 @@
   font-size: 12px;
   color: var(--text-tertiary);
   text-align: right;
+}
+
+.book-list-more-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-tertiary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  cursor: pointer;
+  transition: background-color var(--transition-fast), color var(--transition-fast);
+  opacity: 0;
+}
+
+.book-list-item:hover .book-list-more-btn,
+.book-list-more-btn:focus-visible {
+  opacity: 1;
+}
+
+.book-list-more-btn:hover {
+  background-color: var(--bg-hover);
+  color: var(--text-primary);
 }

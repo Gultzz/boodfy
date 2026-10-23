@@ -1,4 +1,4 @@
-import { FileWarning, BookOpen } from 'lucide-react';
+import { FileWarning, BookOpen, MoreVertical } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import type { Book } from '@/types';
 import './BookListItem.css';
@@ -7,9 +7,10 @@ interface BookListItemProps {
   book: Book;
   onClick: () => void;
   onContextMenu: (e: React.MouseEvent) => void;
+  onUnavailableClick?: (book: Book) => void;
 }
 
-export function BookListItem({ book, onClick, onContextMenu }: BookListItemProps) {
+export function BookListItem({ book, onClick, onContextMenu, onUnavailableClick }: BookListItemProps) {
   const [fileAvailable, setFileAvailable] = useState(true);
 
   useEffect(() => {
@@ -29,11 +30,30 @@ export function BookListItem({ book, onClick, onContextMenu }: BookListItemProps
     return new Date(date).toLocaleDateString('pt-BR');
   };
 
+  const handleClick = () => {
+    if (fileAvailable) {
+      onClick();
+    } else if (onUnavailableClick) {
+      onUnavailableClick(book);
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      handleClick();
+    }
+  };
+
   return (
-    <button
+    <div
+      role="button"
+      tabIndex={0}
       className={`book-list-item ${!fileAvailable ? 'book-list-item-unavailable' : ''}`}
-      onClick={fileAvailable ? onClick : undefined}
+      onClick={handleClick}
+      onKeyDown={handleKeyDown}
       onContextMenu={onContextMenu}
+      title={fileAvailable ? `Abrir ${book.title}` : 'Arquivo indisponível - clique para opções'}
     >
       <div className="book-list-cover">
         {book.coverDataUrl ? (
@@ -64,6 +84,18 @@ export function BookListItem({ book, onClick, onContextMenu }: BookListItemProps
         {statusLabel}
       </span>
       <div className="book-list-date">{formatDate(book.lastReadAt)}</div>
-    </button>
+
+      <button
+        type="button"
+        className="book-list-more-btn"
+        onClick={(e) => {
+          e.stopPropagation();
+          onContextMenu(e);
+        }}
+        title="Opções do livro"
+      >
+        <MoreVertical size={16} />
+      </button>
+    </div>
   );
 }

@@ -7,9 +7,15 @@ interface LibraryBookListProps {
   books: Book[];
   onOpenBook: (book: Book) => void;
   onContextMenu: (e: React.MouseEvent, book: Book) => void;
+  onUnavailableClick: (book: Book) => void;
 }
 
-export function LibraryBookList({ books, onOpenBook, onContextMenu }: LibraryBookListProps) {
+export function LibraryBookList({
+  books,
+  onOpenBook,
+  onContextMenu,
+  onUnavailableClick,
+}: LibraryBookListProps) {
   const viewMode = useLibraryStore((s) => s.viewMode);
 
   return (
@@ -21,6 +27,7 @@ export function LibraryBookList({ books, onOpenBook, onContextMenu }: LibraryBoo
             book={book}
             onClick={() => onOpenBook(book)}
             onContextMenu={(e) => onContextMenu(e, book)}
+            onUnavailableClick={onUnavailableClick}
           />
         ) : (
           <BookListItem
@@ -28,10 +35,10 @@ export function LibraryBookList({ books, onOpenBook, onContextMenu }: LibraryBoo
             book={book}
             onClick={() => onOpenBook(book)}
             onContextMenu={(e) => onContextMenu(e, book)}
+            onUnavailableClick={onUnavailableClick}
           />
         ),
       )}
     </div>
   );
 }
-

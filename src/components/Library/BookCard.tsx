@@ -1,4 +1,4 @@
-import { FileWarning, BookOpen } from 'lucide-react';
+import { FileWarning, BookOpen, MoreVertical } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import type { Book } from '@/types';
 import './BookCard.css';
@@ -7,9 +7,10 @@ interface BookCardProps {
   book: Book;
   onClick: () => void;
   onContextMenu: (e: React.MouseEvent) => void;
+  onUnavailableClick?: (book: Book) => void;
 }
 
-export function BookCard({ book, onClick, onContextMenu }: BookCardProps) {
+export function BookCard({ book, onClick, onContextMenu, onUnavailableClick }: BookCardProps) {
   const [fileAvailable, setFileAvailable] = useState(true);
 
   useEffect(() => {
@@ -32,12 +33,30 @@ export function BookCard({ book, onClick, onContextMenu }: BookCardProps) {
     });
   };
 
+  const handleCardClick = () => {
+    if (fileAvailable) {
+      onClick();
+    } else if (onUnavailableClick) {
+      onUnavailableClick(book);
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      handleCardClick();
+    }
+  };
+
   return (
-    <button
+    <div
+      role="button"
+      tabIndex={0}
       className={`book-card card ${!fileAvailable ? 'book-card-unavailable' : ''}`}
-      onClick={fileAvailable ? onClick : undefined}
+      onClick={handleCardClick}
+      onKeyDown={handleKeyDown}
       onContextMenu={onContextMenu}
-      title={fileAvailable ? `Abrir ${book.title}` : 'Arquivo indisponível'}
+      title={fileAvailable ? `Abrir ${book.title}` : 'Arquivo indisponível - clique para opções'}
     >
       <div className="book-card-cover">
         {book.coverDataUrl ? (
@@ -47,6 +66,19 @@ export function BookCard({ book, onClick, onContextMenu }: BookCardProps) {
             {fileAvailable ? <BookOpen size={32} /> : <FileWarning size={32} />}
           </div>
         )}
+
+        <button
+          type="button"
+          className="book-card-more-btn"
+          onClick={(e) => {
+            e.stopPropagation();
+            onContextMenu(e);
+          }}
+          title="Opções do livro"
+        >
+          <MoreVertical size={16} />
+        </button>
+
         {!fileAvailable && (
           <div className="book-card-unavailable-badge">
             <FileWarning size={14} />
@@ -54,6 +86,7 @@ export function BookCard({ book, onClick, onContextMenu }: BookCardProps) {
           </div>
         )}
       </div>
+
       <div className="book-card-info">
         <h3 className="book-card-title truncate">{book.title}</h3>
         {book.totalPages > 0 && (
@@ -78,6 +111,6 @@ export function BookCard({ book, onClick, onContextMenu }: BookCardProps) {
           {book.lastReadAt && <span className="book-card-date">{formatDate(book.lastReadAt)}</span>}
         </div>
       </div>
-    </button>
+    </div>
   );
 }

@@ -47,16 +47,48 @@ export const libraryService = {
     const book = library.books.find((b) => b.id === bookId);
 
     if (book && deleteFile && book.isManaged) {
-      await window.electronAPI.deleteManaged(book.filePath);
+      try {
+        await window.electronAPI.deleteManaged(book.filePath);
+      } catch (err) {
+        console.warn('Erro ao apagar arquivo gerenciado:', err);
+      }
     }
 
     library.books = library.books.filter((b) => b.id !== bookId);
     await storage.saveLibrary(library);
 
     // Clean up progress
-    const progress = await storage.getProgress();
-    delete progress[bookId];
-    await storage.saveProgress(progress);
+    try {
+      const progress = await storage.getProgress();
+      if (progress[bookId]) {
+        delete progress[bookId];
+        await storage.saveProgress(progress);
+      }
+    } catch (err) {
+      console.warn('Erro ao remover progresso:', err);
+    }
+  },
+
+  async renameBook(bookId: string, newTitle: string): Promise<void> {
+    const trimmed = newTitle.trim();
+    if (!trimmed) return;
+    await this.updateBook(bookId, { title: trimmed });
+
+    try {
+      const history = await storage.getHistory();
+      let changed = false;
+      for (const entry of history.entries) {
+        if (entry.bookId === bookId) {
+          entry.bookTitle = trimmed;
+          changed = true;
+        }
+      }
+      if (changed) {
+        await storage.saveHistory(history);
+      }
+    } catch (err) {
+      console.warn('Erro ao atualizar histórico após renomear livro:', err);
+    }
   },
 
   async updateBook(bookId: string, updates: Partial<Book>): Promise<void> {

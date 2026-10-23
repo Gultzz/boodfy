@@ -19,6 +19,7 @@ interface LibraryState {
   refreshWatchFolder: () => Promise<void>;
   removeBook: (bookId: string, deleteFile?: boolean) => Promise<void>;
   relocateBook: (bookId: string) => Promise<string | null>;
+  renameBook: (bookId: string, newTitle: string) => Promise<void>;
   setViewMode: (mode: ViewMode) => void;
   setFilter: (filter: FilterMode) => void;
   setSort: (sort: SortMode) => void;
@@ -180,7 +181,26 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
   },
 
   removeBook: async (bookId: string, deleteFile = false) => {
+    set((state) => ({
+      library: {
+        ...state.library,
+        books: state.library.books.filter((b) => b.id !== bookId),
+      },
+    }));
     await libraryService.removeBook(bookId, deleteFile);
+    await get().loadLibrary();
+  },
+
+  renameBook: async (bookId: string, newTitle: string) => {
+    const trimmed = newTitle.trim();
+    if (!trimmed) return;
+    set((state) => ({
+      library: {
+        ...state.library,
+        books: state.library.books.map((b) => (b.id === bookId ? { ...b, title: trimmed } : b)),
+      },
+    }));
+    await libraryService.renameBook(bookId, trimmed);
     await get().loadLibrary();
   },
 
