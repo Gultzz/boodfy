@@ -1,0 +1,75 @@
+:root {
+  /* Light theme */
+  --bg-primary: #f8f9fa;
+  --bg-secondary: #ffffff;
+  --bg-tertiary: #f0f1f3;
+  --bg-hover: #e9ecef;
+  --bg-active: #dee2e6;
+  --bg-reader: #e8e8e8;
+
+  --text-primary: #1a1d23;
+  --text-secondary: #495057;
+  --text-tertiary: #868e96;
+  --text-inverse: #ffffff;
+
+  --accent: #3b5998;
+  --accent-hover: #2d4373;
+  --accent-light: #e8edf5;
+  --accent-text: #ffffff;
+
+  --success: #2e7d32;
+  --warning: #f57c00;
+  --error: #c62828;
+  --error-bg: #fdecea;
+
+  --border: #dee2e6;
+  --border-light: #e9ecef;
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.1);
+
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+
+  --transition-fast: 150ms ease;
+  --transition-normal: 250ms ease;
+
+  --font-sans: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --font-mono: 'Cascadia Code', 'Consolas', monospace;
+
+  --header-height: 56px;
+  --sidebar-width: 260px;
+}
+
+[data-theme='dark'] {
+  --bg-primary: #141519;
+  --bg-secondary: #1c1d24;
+  --bg-tertiary: #24252d;
+  --bg-hover: #2a2b35;
+  --bg-active: #32333e;
+  --bg-reader: #1a1a1a;
+
+  --text-primary: #e4e6eb;
+  --text-secondary: #a8abb3;
+  --text-tertiary: #6c7078;
+  --text-inverse: #141519;
+
+  --accent: #5b7ec2;
+  --accent-hover: #7094d4;
+  --accent-light: #1e2a42;
+  --accent-text: #ffffff;
+
+  --success: #4caf50;
+  --warning: #ff9800;
+  --error: #ef5350;
+  --error-bg: #2c1517;
+
+  --border: #2e2f38;
+  --border-light: #24252d;
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.2);
+  --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.4);
+}

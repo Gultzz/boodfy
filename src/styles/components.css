@@ -1,0 +1,307 @@
+/* Buttons */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: var(--radius-md);
+  font-weight: 500;
+  font-size: 14px;
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+  user-select: none;
+  border: 1px solid transparent;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  background-color: var(--accent);
+  color: var(--accent-text);
+  border-color: var(--accent);
+}
+
+.btn-primary:hover:not(:disabled) {
+  background-color: var(--accent-hover);
+  border-color: var(--accent-hover);
+}
+
+.btn-primary:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.btn-secondary {
+  background-color: var(--bg-tertiary);
+  color: var(--text-primary);
+  border-color: var(--border);
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background-color: var(--bg-hover);
+}
+
+.btn-ghost {
+  background-color: transparent;
+  color: var(--text-secondary);
+}
+
+.btn-ghost:hover:not(:disabled) {
+  background-color: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.btn-danger {
+  background-color: var(--error);
+  color: #fff;
+}
+
+.btn-danger:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.btn-icon {
+  padding: 8px;
+  border-radius: var(--radius-md);
+}
+
+.btn-sm {
+  padding: 4px 12px;
+  font-size: 13px;
+}
+
+.btn-lg {
+  padding: 12px 24px;
+  font-size: 15px;
+}
+
+/* Input */
+.input {
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+  transition: border-color var(--transition-fast);
+  width: 100%;
+}
+
+.input:focus {
+  border-color: var(--accent);
+  outline: none;
+}
+
+.input::placeholder {
+  color: var(--text-tertiary);
+}
+
+/* Badge */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.badge-accent {
+  background-color: var(--accent-light);
+  color: var(--accent);
+}
+
+.badge-success {
+  background-color: rgba(46, 125, 50, 0.1);
+  color: var(--success);
+}
+
+.badge-warning {
+  background-color: rgba(245, 124, 0, 0.1);
+  color: var(--warning);
+}
+
+/* Card */
+.card {
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  transition: all var(--transition-fast);
+}
+
+.card:hover {
+  border-color: var(--border);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Empty state */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 64px 32px;
+  text-align: center;
+  gap: 16px;
+}
+
+.empty-state-icon {
+  color: var(--text-tertiary);
+  opacity: 0.5;
+}
+
+.empty-state-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.empty-state-text {
+  font-size: 14px;
+  color: var(--text-secondary);
+  max-width: 400px;
+}
+
+/* Modal overlay */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn var(--transition-fast) ease;
+}
+
+.modal {
+  background-color: var(--bg-secondary);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  min-width: 400px;
+  max-width: 500px;
+  box-shadow: var(--shadow-lg);
+  animation: slideUp var(--transition-normal) ease;
+}
+
+.modal-title {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+
+.modal-body {
+  color: var(--text-secondary);
+  margin-bottom: 24px;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+/* Loading spinner */
+.spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+.spinner-sm {
+  width: 16px;
+  height: 16px;
+  border-width: 2px;
+}
+
+/* Progress bar */
+.progress-bar {
+  height: 4px;
+  background-color: var(--bg-tertiary);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background-color: var(--accent);
+  border-radius: 2px;
+  transition: width var(--transition-normal) ease;
+}
+
+/* Tooltip */
+.tooltip {
+  position: relative;
+}
+
+.tooltip::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 4px 8px;
+  background-color: var(--text-primary);
+  color: var(--text-inverse);
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--transition-fast);
+}
+
+.tooltip:hover::after {
+  opacity: 1;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(8px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Utility */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
