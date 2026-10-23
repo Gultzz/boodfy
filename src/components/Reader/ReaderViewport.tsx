@@ -53,6 +53,13 @@ export function ReaderViewport({
     return () => window.removeEventListener('resize', updateDimensions);
   }, [updateDimensions]);
 
+  // Reset scroll to top when changing page
+  useEffect(() => {
+    if (containerRef.current) {
+      containerRef.current.scrollTop = 0;
+    }
+  }, [currentPage]);
+
   return (
     <div className="reader-viewport" ref={containerRef}>
       {loading && (

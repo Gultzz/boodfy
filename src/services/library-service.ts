@@ -121,7 +121,7 @@ export const libraryService = {
       currentPage,
       totalPages,
       lastReadAt: now,
-      status: currentPage > 1 ? 'reading' : 'not-started',
+      status: (totalPages > 0 && currentPage >= totalPages) ? 'completed' : 'reading',
     };
 
     await storage.saveProgress(progress);
@@ -131,7 +131,7 @@ export const libraryService = {
       currentPage,
       totalPages,
       lastReadAt: now,
-      status: currentPage > 1 ? 'reading' : 'not-started',
+      status: (totalPages > 0 && currentPage >= totalPages) ? 'completed' : 'reading',
     });
   },
 

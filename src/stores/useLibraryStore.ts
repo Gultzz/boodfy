@@ -30,6 +30,61 @@ interface LibraryState {
   ensureMissingCovers: () => Promise<void>;
 }
 
+export function filterAndSortBooks(
+  books: Book[],
+  filter: FilterMode,
+  sort: SortMode,
+  search: string,
+): Book[] {
+  let result = [...books];
+
+  switch (filter) {
+    case 'not-started':
+      result = result.filter((b) => b.status === 'not-started');
+      break;
+    case 'reading':
+      result = result.filter((b) => b.status === 'reading');
+      break;
+    case 'completed':
+      result = result.filter((b) => b.status === 'completed');
+      break;
+    case 'recent':
+      result = result.filter((b) => b.lastReadAt !== null);
+      break;
+  }
+
+  if (search.trim()) {
+    const q = search.toLowerCase().trim();
+    result = result.filter((b) => b.title.toLowerCase().includes(q));
+  }
+
+  switch (sort) {
+    case 'title':
+      result.sort((a, b) => a.title.localeCompare(b.title, 'pt-BR'));
+      break;
+    case 'lastRead':
+      result.sort((a, b) => {
+        if (!a.lastReadAt && !b.lastReadAt) return 0;
+        if (!a.lastReadAt) return 1;
+        if (!b.lastReadAt) return -1;
+        return new Date(b.lastReadAt).getTime() - new Date(a.lastReadAt).getTime();
+      });
+      break;
+    case 'addedAt':
+      result.sort((a, b) => new Date(b.addedAt).getTime() - new Date(a.addedAt).getTime());
+      break;
+  }
+
+  return result;
+}
+
+export function getLastReadBookFromList(books: Book[]): Book | null {
+  const readingBooks = books
+    .filter((b) => b.status === 'reading' && b.lastReadAt)
+    .sort((a, b) => new Date(b.lastReadAt!).getTime() - new Date(a.lastReadAt!).getTime());
+  return readingBooks[0] || null;
+}
+
 export const useLibraryStore = create<LibraryState>((set, get) => ({
   library: { books: [], watchFolder: null },
   progress: {},
@@ -41,7 +96,10 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
   contextMenu: null,
 
   loadLibrary: async () => {
-    set({ loading: true });
+    const isInitial = get().library.books.length === 0;
+    if (isInitial) {
+      set({ loading: true });
+    }
     try {
       const [lib, prog] = await Promise.all([storage.getLibrary(), storage.getProgress()]);
       const updatedBooks = lib.books.map((book) => {
@@ -62,7 +120,9 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
     } catch (err) {
       console.error('Erro ao carregar biblioteca:', err);
     } finally {
-      set({ loading: false });
+      if (isInitial) {
+        set({ loading: false });
+      }
     }
   },
 
@@ -140,54 +200,11 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
 
   getFilteredBooks: () => {
     const { library, filter, sort, search } = get();
-    let books = [...library.books];
-
-    switch (filter) {
-      case 'not-started':
-        books = books.filter((b) => b.status === 'not-started');
-        break;
-      case 'reading':
-        books = books.filter((b) => b.status === 'reading');
-        break;
-      case 'completed':
-        books = books.filter((b) => b.status === 'completed');
-        break;
-      case 'recent':
-        books = books.filter((b) => b.lastReadAt !== null);
-        break;
-    }
-
-    if (search.trim()) {
-      const q = search.toLowerCase().trim();
-      books = books.filter((b) => b.title.toLowerCase().includes(q));
-    }
-
-    switch (sort) {
-      case 'title':
-        books.sort((a, b) => a.title.localeCompare(b.title, 'pt-BR'));
-        break;
-      case 'lastRead':
-        books.sort((a, b) => {
-          if (!a.lastReadAt && !b.lastReadAt) return 0;
-          if (!a.lastReadAt) return 1;
-          if (!b.lastReadAt) return -1;
-          return new Date(b.lastReadAt).getTime() - new Date(a.lastReadAt).getTime();
-        });
-        break;
-      case 'addedAt':
-        books.sort((a, b) => new Date(b.addedAt).getTime() - new Date(a.addedAt).getTime());
-        break;
-    }
-
-    return books;
+    return filterAndSortBooks(library.books, filter, sort, search);
   },
 
   getLastReadBook: () => {
-    const { library } = get();
-    const readingBooks = library.books
-      .filter((b) => b.status === 'reading' && b.lastReadAt)
-      .sort((a, b) => new Date(b.lastReadAt!).getTime() - new Date(a.lastReadAt!).getTime());
-    return readingBooks[0] || null;
+    return getLastReadBookFromList(get().library.books);
   },
 }));
 

@@ -1,5 +1,9 @@
-import { useEffect } from 'react';
-import { useLibraryStore } from '@/stores/useLibraryStore';
+import { useEffect, useMemo } from 'react';
+import {
+  useLibraryStore,
+  filterAndSortBooks,
+  getLastReadBookFromList,
+} from '@/stores/useLibraryStore';
 import { useAppStore } from '@/stores/useAppStore';
 import { LibraryHeader } from './LibraryHeader';
 import { ContinueReadingCard } from './ContinueReadingCard';
@@ -22,8 +26,11 @@ export function LibraryPage({ onOpenBook }: LibraryPageProps) {
   const setContextMenu = useLibraryStore((s) => s.setContextMenu);
   const removeBook = useLibraryStore((s) => s.removeBook);
   const relocateBook = useLibraryStore((s) => s.relocateBook);
-  const getFilteredBooks = useLibraryStore((s) => s.getFilteredBooks);
-  const getLastReadBook = useLibraryStore((s) => s.getLastReadBook);
+
+  const books = useLibraryStore((s) => s.library.books);
+  const filter = useLibraryStore((s) => s.filter);
+  const sort = useLibraryStore((s) => s.sort);
+  const search = useLibraryStore((s) => s.search);
 
   const appOpenBook = useAppStore((s) => s.openBook);
   const handleOpenBook = onOpenBook || appOpenBook;
@@ -32,8 +39,13 @@ export function LibraryPage({ onOpenBook }: LibraryPageProps) {
     loadLibrary();
   }, [loadLibrary]);
 
-  const filteredBooks = getFilteredBooks();
-  const lastReadBook = getLastReadBook();
+  const filteredBooks = useMemo(() => {
+    return filterAndSortBooks(books, filter, sort, search);
+  }, [books, filter, sort, search]);
+
+  const lastReadBook = useMemo(() => {
+    return getLastReadBookFromList(books);
+  }, [books]);
 
   const handleContextMenu = (e: React.MouseEvent, book: Book) => {
     e.preventDefault();

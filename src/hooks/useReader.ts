@@ -124,13 +124,17 @@ export function useReader({ book, onBack }: UseReaderProps) {
     setFocusMode((prev) => !prev);
   }, []);
 
-  const handleBack = useCallback(() => {
+  const handleBack = useCallback(async () => {
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+      saveTimeoutRef.current = null;
+    }
     if (book && currentPage > 0 && totalPages > 0) {
-      libraryService.updateProgress(book.id, currentPage, totalPages);
-      libraryService.updateLastHistoryEntry(currentPage);
+      await libraryService.updateProgress(book.id, currentPage, totalPages);
+      await libraryService.updateLastHistoryEntry(currentPage);
       // Check if completed
       if (currentPage >= totalPages) {
-        libraryService.markCompleted(book.id);
+        await libraryService.markCompleted(book.id);
       }
     }
     onBack();
