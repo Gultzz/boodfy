@@ -1,54 +1,37 @@
-import { useState } from 'react';
+import { useEffect } from 'react';
 import { LibraryPage } from '@/components/Library/LibraryPage';
 import { ReaderPage } from '@/components/Reader/ReaderPage';
 import { HistoryPage } from '@/components/History/HistoryPage';
 import { SettingsPage } from '@/components/Settings/SettingsPage';
 import { ErrorBoundary } from '@/components/common/ErrorBoundary';
-import { useTheme } from '@/hooks/useTheme';
-import { storage } from '@/services/storage';
-import type { Book, Page } from '@/types';
+import { useAppStore } from '@/stores/useAppStore';
+import { useThemeStore } from '@/stores/useThemeStore';
 
 export function App() {
-  useTheme(); // Initialize theme
-  const [currentPage, setCurrentPage] = useState<Page>('library');
-  const [currentBook, setCurrentBook] = useState<Book | null>(null);
+  const initializeTheme = useThemeStore((s) => s.initializeTheme);
+  const currentPage = useAppStore((s) => s.currentPage);
+  const currentBook = useAppStore((s) => s.currentBook);
+  const backToLibrary = useAppStore((s) => s.backToLibrary);
 
-  const handleOpenBook = (book: Book) => {
-    setCurrentBook(book);
-    setCurrentPage('reader');
-  };
-
-  const handleOpenBookById = async (bookId: string) => {
-    const lib = await storage.getLibrary();
-    const found = lib.books.find((b) => b.id === bookId);
-    if (found) {
-      handleOpenBook(found);
-    }
-  };
-
-  const handleBackToLibrary = () => {
-    setCurrentBook(null);
-    setCurrentPage('library');
-  };
+  useEffect(() => {
+    initializeTheme();
+  }, [initializeTheme]);
 
   return (
     <div className="app-root" style={{ width: '100%', height: '100%' }}>
-      {currentPage === 'library' && (
-        <LibraryPage onOpenBook={handleOpenBook} onNavigate={setCurrentPage} />
-      )}
+      {currentPage === 'library' && <LibraryPage />}
 
       {currentPage === 'reader' && currentBook && (
-        <ErrorBoundary onReset={handleBackToLibrary}>
-          <ReaderPage book={currentBook} onBack={handleBackToLibrary} />
+        <ErrorBoundary onReset={backToLibrary}>
+          <ReaderPage book={currentBook} onBack={backToLibrary} />
         </ErrorBoundary>
       )}
 
-      {currentPage === 'history' && (
-        <HistoryPage onBack={handleBackToLibrary} onOpenBookById={handleOpenBookById} />
-      )}
+      {currentPage === 'history' && <HistoryPage />}
 
-      {currentPage === 'settings' && <SettingsPage onBack={handleBackToLibrary} />}
+      {currentPage === 'settings' && <SettingsPage />}
     </div>
   );
 }
+
 export default App;

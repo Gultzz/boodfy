@@ -1,16 +1,21 @@
 import { useState, useEffect } from 'react';
 import { ArrowLeft, Folder, HardDrive, Sun, Moon, Monitor } from 'lucide-react';
 import { storage } from '@/services/storage';
-import { useTheme } from '@/hooks/useTheme';
+import { useThemeStore } from '@/stores/useThemeStore';
+import { useAppStore } from '@/stores/useAppStore';
 import type { AppSettings, FitMode } from '@/types';
 import './SettingsPage.css';
 
 interface SettingsPageProps {
-  onBack: () => void;
+  onBack?: () => void;
 }
 
 export function SettingsPage({ onBack }: SettingsPageProps) {
-  const { theme, setTheme } = useTheme();
+  const theme = useThemeStore((s) => s.theme);
+  const setTheme = useThemeStore((s) => s.setTheme);
+  const backToLibrary = useAppStore((s) => s.backToLibrary);
+  const handleBack = onBack || backToLibrary;
+
   const [settings, setSettings] = useState<AppSettings>({
     theme: 'system',
     defaultFitMode: 'height',
@@ -56,7 +61,7 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
     <div className="settings-page">
       <header className="settings-header">
         <div className="settings-header-left">
-          <button className="btn btn-ghost btn-icon" onClick={onBack} title="Voltar">
+          <button className="btn btn-ghost btn-icon" onClick={handleBack} title="Voltar">
             <ArrowLeft size={18} />
           </button>
           <h2>Configurações</h2>

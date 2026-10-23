@@ -1,17 +1,24 @@
 import { useState, useEffect } from 'react';
 import { ArrowLeft, Clock, BookOpen, Trash2 } from 'lucide-react';
 import { storage } from '@/services/storage';
+import { useAppStore } from '@/stores/useAppStore';
 import type { HistoryEntry } from '@/types';
 import './HistoryPage.css';
 
 interface HistoryPageProps {
-  onBack: () => void;
-  onOpenBookById: (bookId: string) => void;
+  onBack?: () => void;
+  onOpenBookById?: (bookId: string) => void;
 }
 
 export function HistoryPage({ onBack, onOpenBookById }: HistoryPageProps) {
   const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const appBack = useAppStore((s) => s.backToLibrary);
+  const appOpenBookById = useAppStore((s) => s.openBookById);
+
+  const handleBack = onBack || appBack;
+  const handleOpenBookById = onOpenBookById || appOpenBookById;
 
   useEffect(() => {
     storage.getHistory().then((data) => {
@@ -40,7 +47,7 @@ export function HistoryPage({ onBack, onOpenBookById }: HistoryPageProps) {
     <div className="history-page">
       <header className="history-header">
         <div className="history-header-left">
-          <button className="btn btn-ghost btn-icon" onClick={onBack} title="Voltar">
+          <button className="btn btn-ghost btn-icon" onClick={handleBack} title="Voltar">
             <ArrowLeft size={18} />
           </button>
           <h2>Histórico de Leitura</h2>
@@ -92,7 +99,7 @@ export function HistoryPage({ onBack, onOpenBookById }: HistoryPageProps) {
                   </div>
                   <button
                     className="btn btn-primary btn-sm"
-                    onClick={() => onOpenBookById(entry.bookId)}
+                    onClick={() => handleOpenBookById(entry.bookId)}
                   >
                     Ler Novamente
                   </button>
