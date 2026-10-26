@@ -119,6 +119,28 @@
   display: block;
 }
 
+/* Modo Página Dupla: duas páginas lado a lado, cada uma com sua moldura */
+.pdf-page-wrapper.pdf-spread {
+  background-color: transparent;
+  box-shadow: none;
+  border-radius: 0;
+}
+
+/* O react-pdf envolve as páginas em um div interno (react-pdf__Document) */
+.pdf-page-wrapper.pdf-spread .react-pdf__Document {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+}
+
+.pdf-page-wrapper.pdf-spread .pdf-page-canvas {
+  box-shadow: var(--shadow-lg);
+  background-color: #fff;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
 /* Loading & Error States */
 .reader-loading,
 .reader-error {

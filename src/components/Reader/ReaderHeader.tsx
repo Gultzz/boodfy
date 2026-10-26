@@ -1,11 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import {
-  ArrowLeft,
-  Sidebar,
-  Eye,
-  Maximize,
-  Minimize,
-} from 'lucide-react';
+import { ArrowLeft, Sidebar, Eye, Maximize, Minimize, BookOpen } from 'lucide-react';
 import { ReaderZoomControls } from './ReaderZoomControls';
 import type { FitMode } from '@/types';
 
@@ -18,6 +12,7 @@ interface ReaderHeaderProps {
   showThumbnails: boolean;
   focusMode: boolean;
   isFullscreen: boolean;
+  doublePage: boolean;
   onBack: () => void;
   onGoToPage: (page: number) => void;
   onSetFitMode: (mode: FitMode) => void;
@@ -26,6 +21,7 @@ interface ReaderHeaderProps {
   onToggleThumbnails: () => void;
   onToggleFocusMode: () => void;
   onToggleFullscreen: () => void;
+  onToggleDoublePage: () => void;
 }
 
 export function ReaderHeader({
@@ -37,6 +33,7 @@ export function ReaderHeader({
   showThumbnails,
   focusMode,
   isFullscreen,
+  doublePage,
   onBack,
   onGoToPage,
   onSetFitMode,
@@ -45,6 +42,7 @@ export function ReaderHeader({
   onToggleThumbnails,
   onToggleFocusMode,
   onToggleFullscreen,
+  onToggleDoublePage,
 }: ReaderHeaderProps) {
   const [inputPage, setInputPage] = useState(String(currentPage));
 
@@ -65,11 +63,7 @@ export function ReaderHeader({
   return (
     <header className="reader-header">
       <div className="reader-header-left">
-        <button
-          className="btn btn-ghost btn-icon"
-          onClick={onBack}
-          title="Voltar para Biblioteca"
-        >
+        <button className="btn btn-ghost btn-icon" onClick={onBack} title="Voltar para Biblioteca">
           <ArrowLeft size={18} />
         </button>
         <span className="reader-book-title truncate" title={title}>
@@ -103,6 +97,15 @@ export function ReaderHeader({
         <div className="divider-v" />
 
         <button
+          className={`btn btn-ghost btn-icon ${doublePage ? 'active' : ''}`}
+          onClick={onToggleDoublePage}
+          title={doublePage ? 'Modo Página Única' : 'Modo Página Dupla'}
+          aria-pressed={doublePage}
+        >
+          <BookOpen size={18} />
+        </button>
+
+        <button
           className={`btn btn-ghost btn-icon ${showThumbnails ? 'active' : ''}`}
           onClick={onToggleThumbnails}
           title="Miniaturas das Páginas"
@@ -129,4 +132,3 @@ export function ReaderHeader({
     </header>
   );
 }
-

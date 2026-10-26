@@ -1,10 +1,22 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { libraryService } from '@/services/library-service';
 import type { Book, FitMode } from '@/types';
 
 interface UseReaderProps {
   book: Book | null;
   onBack: () => void;
+}
+
+/**
+ * Intervalo de páginas visível em modo página dupla.
+ * A página 1 (capa) fica isolada; depois os pares começam na página 2:
+ * [1], [2,3], [4,5], ...
+ */
+export function getSpreadRange(page: number, totalPages: number): { first: number; last: number } {
+  if (page <= 1) return { first: 1, last: 1 };
+  const first = page % 2 === 0 ? page : page - 1;
+  const last = totalPages > 0 ? Math.min(first + 1, totalPages) : first + 1;
+  return { first, last };
 }
 
 export function useReader({ book, onBack }: UseReaderProps) {
@@ -17,6 +29,7 @@ export function useReader({ book, onBack }: UseReaderProps) {
   const [zoom, setZoom] = useState(1);
   const [focusMode, setFocusMode] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [doublePage, setDoublePage] = useState(false);
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const bookRef = useRef(book);
   const currentPageRef = useRef(currentPage);
@@ -86,12 +99,26 @@ export function useReader({ book, onBack }: UseReaderProps) {
   );
 
   const nextPage = useCallback(() => {
-    goToPage(currentPage + 1);
-  }, [currentPage, goToPage]);
+    if (!doublePage) {
+      goToPage(currentPage + 1);
+      return;
+    }
+    const { first } = getSpreadRange(currentPage, totalPages);
+    const next = first === 1 ? 2 : first + 2;
+    if (next > totalPages || next === currentPage) return;
+    goToPage(next);
+  }, [currentPage, totalPages, doublePage, goToPage]);
 
   const prevPage = useCallback(() => {
-    goToPage(currentPage - 1);
-  }, [currentPage, goToPage]);
+    if (!doublePage) {
+      goToPage(currentPage - 1);
+      return;
+    }
+    const { first } = getSpreadRange(currentPage, totalPages);
+    const prev = first <= 2 ? 1 : first - 2;
+    if (prev === currentPage) return;
+    goToPage(prev);
+  }, [currentPage, totalPages, doublePage, goToPage]);
 
   const firstPage = useCallback(() => {
     goToPage(1);
@@ -123,6 +150,17 @@ export function useReader({ book, onBack }: UseReaderProps) {
   const toggleFocusMode = useCallback(() => {
     setFocusMode((prev) => !prev);
   }, []);
+
+  const toggleDoublePage = useCallback(() => {
+    setDoublePage((prev) => !prev);
+  }, []);
+
+  // Páginas visíveis agora: uma no modo simples, o par atual no modo duplo
+  const visiblePages = useMemo(() => {
+    if (!doublePage) return [currentPage];
+    const { first, last } = getSpreadRange(currentPage, totalPages);
+    return last > first ? [first, last] : [first];
+  }, [doublePage, currentPage, totalPages]);
 
   const handleBack = useCallback(async () => {
     if (saveTimeoutRef.current) {
@@ -194,6 +232,9 @@ export function useReader({ book, onBack }: UseReaderProps) {
     setZoom,
     focusMode,
     isFullscreen,
+    doublePage,
+    toggleDoublePage,
+    visiblePages,
     goToPage,
     nextPage,
     prevPage,

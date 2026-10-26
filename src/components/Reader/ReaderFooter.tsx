@@ -1,43 +1,44 @@
 import { ChevronLeft, ChevronRight, CheckCircle } from 'lucide-react';
 
 interface ReaderFooterProps {
-  currentPage: number;
+  pages: number[];
   totalPages: number;
   onPrevPage: () => void;
   onNextPage: () => void;
 }
 
-export function ReaderFooter({
-  currentPage,
-  totalPages,
-  onPrevPage,
-  onNextPage,
-}: ReaderFooterProps) {
+export function ReaderFooter({ pages, totalPages, onPrevPage, onNextPage }: ReaderFooterProps) {
+  const first = pages[0];
+  const last = pages[pages.length - 1];
+  const pageLabel = pages.length > 1 ? `${first}–${last}` : String(first);
+  const atStart = first <= 1;
+  const atEnd = last >= totalPages;
+
   return (
     <footer className="reader-footer">
       <div className="reader-nav-buttons">
         <button
           className="btn btn-secondary btn-icon"
           onClick={onPrevPage}
-          disabled={currentPage <= 1}
+          disabled={atStart}
           title="Página Anterior (Seta Esquerda)"
         >
           <ChevronLeft size={20} />
         </button>
         <span className="footer-page-indicator">
-          {currentPage} / {totalPages || '—'}
+          {pageLabel} / {totalPages || '—'}
         </span>
         <button
           className="btn btn-secondary btn-icon"
           onClick={onNextPage}
-          disabled={currentPage >= totalPages}
+          disabled={atEnd}
           title="Próxima Página (Seta Direita)"
         >
           <ChevronRight size={20} />
         </button>
       </div>
 
-      {currentPage >= totalPages && totalPages > 0 && (
+      {atEnd && totalPages > 0 && (
         <div className="completed-badge">
           <CheckCircle size={14} /> Leitura concluída!
         </div>
@@ -45,4 +46,3 @@ export function ReaderFooter({
     </footer>
   );
 }
-

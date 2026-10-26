@@ -27,6 +27,9 @@ export function ReaderPage({ book, onBack }: ReaderPageProps) {
     setZoom,
     focusMode,
     isFullscreen,
+    doublePage,
+    toggleDoublePage,
+    visiblePages,
     goToPage,
     nextPage,
     prevPage,
@@ -71,6 +74,7 @@ export function ReaderPage({ book, onBack }: ReaderPageProps) {
         showThumbnails={showThumbnails}
         focusMode={focusMode}
         isFullscreen={isFullscreen}
+        doublePage={doublePage}
         onBack={handleBack}
         onGoToPage={goToPage}
         onSetFitMode={setFitMode}
@@ -79,6 +83,7 @@ export function ReaderPage({ book, onBack }: ReaderPageProps) {
         onToggleThumbnails={() => setShowThumbnails((prev) => !prev)}
         onToggleFocusMode={toggleFocusMode}
         onToggleFullscreen={toggleFullscreen}
+        onToggleDoublePage={toggleDoublePage}
       />
 
       <div className="reader-body">
@@ -94,7 +99,7 @@ export function ReaderPage({ book, onBack }: ReaderPageProps) {
 
         <ReaderViewport
           pdfData={pdfData}
-          currentPage={currentPage}
+          pages={visiblePages}
           loading={loading}
           error={error}
           fitMode={fitMode}
@@ -105,7 +110,7 @@ export function ReaderPage({ book, onBack }: ReaderPageProps) {
       </div>
 
       <ReaderFooter
-        currentPage={currentPage}
+        pages={visiblePages}
         totalPages={totalPages}
         onPrevPage={prevPage}
         onNextPage={nextPage}
