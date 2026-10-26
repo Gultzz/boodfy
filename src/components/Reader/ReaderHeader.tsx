@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Sidebar, Eye, Maximize, Minimize, BookOpen } from 'lucide-react';
+import { ArrowLeft, Sidebar, Eye, Maximize, Minimize, BookOpen, ListTree } from 'lucide-react';
 import { ReaderZoomControls } from './ReaderZoomControls';
 import type { FitMode } from '@/types';
 
@@ -10,6 +10,7 @@ interface ReaderHeaderProps {
   fitMode: FitMode;
   zoom: number;
   showThumbnails: boolean;
+  showOutline: boolean;
   focusMode: boolean;
   isFullscreen: boolean;
   doublePage: boolean;
@@ -19,6 +20,7 @@ interface ReaderHeaderProps {
   onSetZoom: (updater: (z: number) => number) => void;
   onResetZoom: () => void;
   onToggleThumbnails: () => void;
+  onToggleOutline: () => void;
   onToggleFocusMode: () => void;
   onToggleFullscreen: () => void;
   onToggleDoublePage: () => void;
@@ -31,6 +33,7 @@ export function ReaderHeader({
   fitMode,
   zoom,
   showThumbnails,
+  showOutline,
   focusMode,
   isFullscreen,
   doublePage,
@@ -40,6 +43,7 @@ export function ReaderHeader({
   onSetZoom,
   onResetZoom,
   onToggleThumbnails,
+  onToggleOutline,
   onToggleFocusMode,
   onToggleFullscreen,
   onToggleDoublePage,
@@ -111,6 +115,15 @@ export function ReaderHeader({
           title="Miniaturas das Páginas"
         >
           <Sidebar size={18} />
+        </button>
+
+        <button
+          className={`btn btn-ghost btn-icon ${showOutline ? 'active' : ''}`}
+          onClick={onToggleOutline}
+          title="Sumário"
+          aria-pressed={showOutline}
+        >
+          <ListTree size={18} />
         </button>
 
         <button

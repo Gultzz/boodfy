@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import type { PDFDocumentProxy } from 'pdfjs-dist';
 import { libraryService } from '@/services/library-service';
 import type { Book, FitMode } from '@/types';
 
@@ -30,6 +31,7 @@ export function useReader({ book, onBack }: UseReaderProps) {
   const [focusMode, setFocusMode] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [doublePage, setDoublePage] = useState(false);
+  const [pdfDoc, setPdfDoc] = useState<PDFDocumentProxy | null>(null);
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const bookRef = useRef(book);
   const currentPageRef = useRef(currentPage);
@@ -43,6 +45,7 @@ export function useReader({ book, onBack }: UseReaderProps) {
     setLoading(true);
     setError(null);
     setPdfData(null);
+    setPdfDoc(null);
 
     (async () => {
       try {
@@ -155,6 +158,11 @@ export function useReader({ book, onBack }: UseReaderProps) {
     setDoublePage((prev) => !prev);
   }, []);
 
+  // Guarda o documento aberto para o sumário (outline) poder ser lido depois
+  const onDocumentReady = useCallback((pdf: PDFDocumentProxy) => {
+    setPdfDoc(pdf);
+  }, []);
+
   // Páginas visíveis agora: uma no modo simples, o par atual no modo duplo
   const visiblePages = useMemo(() => {
     if (!doublePage) return [currentPage];
@@ -235,6 +243,8 @@ export function useReader({ book, onBack }: UseReaderProps) {
     doublePage,
     toggleDoublePage,
     visiblePages,
+    pdfDoc,
+    onDocumentReady,
     goToPage,
     nextPage,
     prevPage,

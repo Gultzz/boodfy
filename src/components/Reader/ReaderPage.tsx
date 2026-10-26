@@ -4,6 +4,7 @@ import { ReaderHeader } from './ReaderHeader';
 import { ReaderViewport } from './ReaderViewport';
 import { ReaderFooter } from './ReaderFooter';
 import { PageThumbnails } from './PageThumbnails';
+import { ReaderOutline } from './ReaderOutline';
 import type { Book } from '@/types';
 import './ReaderPage.css';
 import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
@@ -30,6 +31,8 @@ export function ReaderPage({ book, onBack }: ReaderPageProps) {
     doublePage,
     toggleDoublePage,
     visiblePages,
+    pdfDoc,
+    onDocumentReady,
     goToPage,
     nextPage,
     prevPage,
@@ -39,7 +42,7 @@ export function ReaderPage({ book, onBack }: ReaderPageProps) {
     handleBack,
   } = useReader({ book, onBack });
 
-  const [showThumbnails, setShowThumbnails] = useState(false);
+  const [sidebar, setSidebar] = useState<'thumbnails' | 'outline' | null>(null);
   const [controlsVisible, setControlsVisible] = useState(true);
   const showControlsTimer = useRef<NodeJS.Timeout | null>(null);
 
@@ -71,7 +74,8 @@ export function ReaderPage({ book, onBack }: ReaderPageProps) {
         totalPages={totalPages}
         fitMode={fitMode}
         zoom={zoom}
-        showThumbnails={showThumbnails}
+        showThumbnails={sidebar === 'thumbnails'}
+        showOutline={sidebar === 'outline'}
         focusMode={focusMode}
         isFullscreen={isFullscreen}
         doublePage={doublePage}
@@ -80,21 +84,28 @@ export function ReaderPage({ book, onBack }: ReaderPageProps) {
         onSetFitMode={setFitMode}
         onSetZoom={setZoom}
         onResetZoom={handleResetZoom}
-        onToggleThumbnails={() => setShowThumbnails((prev) => !prev)}
+        onToggleThumbnails={() =>
+          setSidebar((prev) => (prev === 'thumbnails' ? null : 'thumbnails'))
+        }
+        onToggleOutline={() => setSidebar((prev) => (prev === 'outline' ? null : 'outline'))}
         onToggleFocusMode={toggleFocusMode}
         onToggleFullscreen={toggleFullscreen}
         onToggleDoublePage={toggleDoublePage}
       />
 
       <div className="reader-body">
-        {showThumbnails && pdfData && (
+        {sidebar === 'thumbnails' && pdfData && (
           <PageThumbnails
             pdfData={pdfData}
             totalPages={totalPages}
             currentPage={currentPage}
             onSelectPage={goToPage}
-            onClose={() => setShowThumbnails(false)}
+            onClose={() => setSidebar(null)}
           />
+        )}
+
+        {sidebar === 'outline' && (
+          <ReaderOutline pdf={pdfDoc} onSelectPage={goToPage} onClose={() => setSidebar(null)} />
         )}
 
         <ReaderViewport
@@ -105,6 +116,7 @@ export function ReaderPage({ book, onBack }: ReaderPageProps) {
           fitMode={fitMode}
           zoom={zoom}
           onDocumentLoadSuccess={onDocumentLoadSuccess}
+          onDocumentReady={onDocumentReady}
           onBack={handleBack}
         />
       </div>

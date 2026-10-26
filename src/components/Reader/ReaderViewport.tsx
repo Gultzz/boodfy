@@ -15,6 +15,7 @@ interface ReaderViewportProps {
   fitMode: FitMode;
   zoom: number;
   onDocumentLoadSuccess: (numPages: number) => void;
+  onDocumentReady?: (pdf: PDFDocumentProxy) => void;
   onBack: () => void;
 }
 
@@ -32,6 +33,7 @@ export function ReaderViewport({
   fitMode,
   zoom,
   onDocumentLoadSuccess,
+  onDocumentReady,
   onBack,
 }: ReaderViewportProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -54,6 +56,7 @@ export function ReaderViewport({
   const handleDocumentLoadSuccess = useCallback(
     (pdf: PDFDocumentProxy) => {
       onDocumentLoadSuccess(pdf.numPages);
+      onDocumentReady?.(pdf);
       pdf
         .getPage(1)
         .then((page) => {
@@ -65,7 +68,7 @@ export function ReaderViewport({
           setPageAspect(0.7071);
         });
     },
-    [onDocumentLoadSuccess],
+    [onDocumentLoadSuccess, onDocumentReady],
   );
 
   // Handle container resize to adjust page scale
