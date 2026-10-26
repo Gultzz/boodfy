@@ -11,6 +11,7 @@ interface LibraryState {
   filter: FilterMode;
   sort: SortMode;
   search: string;
+  selectedTag: string | null;
   contextMenu: { book: Book; x: number; y: number } | null;
 
   loadLibrary: () => Promise<void>;
@@ -20,14 +21,18 @@ interface LibraryState {
   removeBook: (bookId: string, deleteFile?: boolean) => Promise<void>;
   relocateBook: (bookId: string) => Promise<string | null>;
   renameBook: (bookId: string, newTitle: string) => Promise<void>;
+  setBookTags: (bookId: string, tags: string[]) => Promise<void>;
+  deleteTagGlobally: (tag: string) => Promise<void>;
   setViewMode: (mode: ViewMode) => void;
   setFilter: (filter: FilterMode) => void;
   setSort: (sort: SortMode) => void;
   setSearch: (search: string) => void;
+  setSelectedTag: (tag: string | null) => void;
   setContextMenu: (menu: { book: Book; x: number; y: number } | null) => void;
 
   getFilteredBooks: () => Book[];
   getLastReadBook: () => Book | null;
+  getAllTags: () => string[];
   ensureMissingCovers: () => Promise<void>;
 }
 
@@ -36,6 +41,7 @@ export function filterAndSortBooks(
   filter: FilterMode,
   sort: SortMode,
   search: string,
+  selectedTag?: string | null,
 ): Book[] {
   let result = [...books];
 
@@ -52,6 +58,11 @@ export function filterAndSortBooks(
     case 'recent':
       result = result.filter((b) => b.lastReadAt !== null);
       break;
+  }
+
+  // Filter by custom tag/collection if selected
+  if (selectedTag) {
+    result = result.filter((b) => b.tags && b.tags.includes(selectedTag));
   }
 
   if (search.trim()) {
@@ -87,13 +98,14 @@ export function getLastReadBookFromList(books: Book[]): Book | null {
 }
 
 export const useLibraryStore = create<LibraryState>((set, get) => ({
-  library: { books: [], watchFolder: null },
+  library: { books: [], watchFolder: null, tags: [] },
   progress: {},
   loading: true,
   viewMode: 'grid',
   filter: 'all',
   sort: 'lastRead',
   search: '',
+  selectedTag: null,
   contextMenu: null,
 
   loadLibrary: async () => {
@@ -102,7 +114,16 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
       set({ loading: true });
     }
     try {
-      const [lib, prog] = await Promise.all([storage.getLibrary(), storage.getProgress()]);
+      const [rawLib, prog] = await Promise.all([storage.getLibrary(), storage.getProgress()]);
+      let lib = rawLib;
+
+      // Auto-migrate legacy base64 covers to local disk cache files
+      try {
+        lib = await libraryService.migrateBase64CoversToDisk(rawLib);
+      } catch (err) {
+        console.warn('Erro na migração de capas:', err);
+      }
+
       const updatedBooks = lib.books.map((book) => {
         const p = prog[book.id];
         if (p) {
@@ -204,6 +225,25 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
     await get().loadLibrary();
   },
 
+  setBookTags: async (bookId: string, tags: string[]) => {
+    set((state) => ({
+      library: {
+        ...state.library,
+        books: state.library.books.map((b) => (b.id === bookId ? { ...b, tags } : b)),
+      },
+    }));
+    await libraryService.setBookTags(bookId, tags);
+    await get().loadLibrary();
+  },
+
+  deleteTagGlobally: async (tag: string) => {
+    if (get().selectedTag === tag) {
+      set({ selectedTag: null });
+    }
+    await libraryService.deleteTagGlobally(tag);
+    await get().loadLibrary();
+  },
+
   relocateBook: async (bookId: string) => {
     const newPath = await libraryService.relocateBook(bookId);
     if (newPath) {
@@ -216,15 +256,29 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
   setFilter: (filter) => set({ filter }),
   setSort: (sort) => set({ sort }),
   setSearch: (search) => set({ search }),
+  setSelectedTag: (selectedTag) => set({ selectedTag }),
   setContextMenu: (contextMenu) => set({ contextMenu }),
 
   getFilteredBooks: () => {
-    const { library, filter, sort, search } = get();
-    return filterAndSortBooks(library.books, filter, sort, search);
+    const { library, filter, sort, search, selectedTag } = get();
+    return filterAndSortBooks(library.books, filter, sort, search, selectedTag);
   },
 
   getLastReadBook: () => {
     return getLastReadBookFromList(get().library.books);
+  },
+
+  getAllTags: () => {
+    const { library } = get();
+    const tagsSet = new Set<string>(library.tags || []);
+    for (const b of library.books) {
+      if (b.tags) {
+        for (const t of b.tags) {
+          if (t.trim()) tagsSet.add(t.trim());
+        }
+      }
+    }
+    return Array.from(tagsSet).sort();
   },
 }));
 

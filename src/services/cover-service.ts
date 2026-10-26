@@ -1,7 +1,7 @@
 import { pdfjs } from 'react-pdf';
 
 const COVER_WIDTH = 280;
-const JPEG_QUALITY = 0.72;
+const WEBP_QUALITY = 0.8;
 
 export interface PdfCoverResult {
   coverDataUrl: string;
@@ -39,8 +39,14 @@ export async function generatePdfCover(filePath: string): Promise<PdfCoverResult
       viewport,
     }).promise;
 
+    // Use WebP format with PNG fallback for optimal compression and speed
+    let coverDataUrl = canvas.toDataURL('image/webp', WEBP_QUALITY);
+    if (!coverDataUrl.startsWith('data:image/webp')) {
+      coverDataUrl = canvas.toDataURL('image/png');
+    }
+
     return {
-      coverDataUrl: canvas.toDataURL('image/jpeg', JPEG_QUALITY),
+      coverDataUrl,
       totalPages: pdf.numPages,
     };
   } catch (err) {

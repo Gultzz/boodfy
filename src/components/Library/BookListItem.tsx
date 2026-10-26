@@ -10,7 +10,12 @@ interface BookListItemProps {
   onUnavailableClick?: (book: Book) => void;
 }
 
-export function BookListItem({ book, onClick, onContextMenu, onUnavailableClick }: BookListItemProps) {
+export function BookListItem({
+  book,
+  onClick,
+  onContextMenu,
+  onUnavailableClick,
+}: BookListItemProps) {
   const [fileAvailable, setFileAvailable] = useState(true);
 
   useEffect(() => {
@@ -64,7 +69,23 @@ export function BookListItem({ book, onClick, onContextMenu, onUnavailableClick 
           <FileWarning size={18} />
         )}
       </div>
-      <div className="book-list-title truncate">{book.title}</div>
+
+      <div className="book-list-title-cell">
+        <div className="book-list-title truncate">{book.title}</div>
+        {book.tags && book.tags.length > 0 && (
+          <div className="book-list-tags">
+            {book.tags.slice(0, 3).map((tag) => (
+              <span key={tag} className="book-tag-chip" title={tag}>
+                {tag}
+              </span>
+            ))}
+            {book.tags.length > 3 && (
+              <span className="book-tag-chip more">+{book.tags.length - 3}</span>
+            )}
+          </div>
+        )}
+      </div>
+
       <div className="book-list-progress">
         {book.totalPages > 0 && (
           <>

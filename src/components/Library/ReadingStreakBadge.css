@@ -1,0 +1,126 @@
+.reading-streak-container {
+  position: relative;
+  display: inline-flex;
+}
+
+.reading-streak-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: var(--radius-full, 9999px);
+  font-size: 13px;
+  font-weight: 600;
+  border: 1px solid var(--border);
+  background-color: var(--card);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  user-select: none;
+}
+
+.reading-streak-badge:hover {
+  background-color: var(--bg-hover);
+  border-color: var(--border-hover, var(--border));
+}
+
+.reading-streak-badge.active {
+  background: linear-gradient(135deg, hsl(32 95% 50% / 0.15), hsl(15 90% 50% / 0.15));
+  border-color: hsl(32 95% 50% / 0.4);
+  color: hsl(25 95% 45%);
+}
+
+.dark .reading-streak-badge.active {
+  color: hsl(35 100% 60%);
+  background: linear-gradient(135deg, hsl(32 95% 50% / 0.2), hsl(15 90% 50% / 0.2));
+  border-color: hsl(32 95% 50% / 0.5);
+}
+
+.streak-flame {
+  color: var(--text-tertiary);
+  transition: transform var(--transition-fast);
+}
+
+.reading-streak-badge.active .streak-flame {
+  color: hsl(25 95% 50%);
+  filter: drop-shadow(0 0 4px hsl(32 95% 50% / 0.5));
+}
+
+.dark .reading-streak-badge.active .streak-flame {
+  color: hsl(35 100% 55%);
+}
+
+.reading-streak-badge:hover .streak-flame {
+  transform: scale(1.15);
+}
+
+.streak-popover {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 250px;
+  background-color: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  padding: 14px;
+  z-index: 1000;
+  animation: fadeIn var(--transition-fast) ease;
+}
+
+.streak-popover-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  margin-bottom: 10px;
+  color: var(--text-primary);
+}
+
+.streak-popover-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  border-bottom: 1px solid var(--border-light);
+  padding-bottom: 10px;
+  margin-bottom: 10px;
+}
+
+.streak-stat-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.streak-stat-value {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.streak-status-msg {
+  font-size: 11px;
+  line-height: 1.4;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.streak-status-msg.done {
+  color: hsl(142 70% 40%);
+}
+
+.dark .streak-status-msg.done {
+  color: hsl(142 70% 55%);
+}
+
+.streak-status-msg.pending {
+  color: hsl(35 90% 45%);
+}
+
+.dark .streak-status-msg.pending {
+  color: hsl(35 95% 60%);
+}
+

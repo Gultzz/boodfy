@@ -1,6 +1,21 @@
-import { app, BrowserWindow, ipcMain, dialog, shell } from 'electron';
+import { app, BrowserWindow, ipcMain, dialog, shell, protocol, net } from 'electron';
 import path from 'path';
 import fs from 'fs';
+import { pathToFileURL } from 'url';
+
+// Register custom protocol for local cover cache before app is ready
+protocol.registerSchemesAsPrivileged([
+  {
+    scheme: 'bookly-cover',
+    privileges: {
+      standard: true,
+      secure: true,
+      supportFetchAPI: true,
+      corsEnabled: true,
+      bypassCSP: false,
+    },
+  },
+]);
 
 const isDev = !app.isPackaged;
 
@@ -10,11 +25,20 @@ function getDataPath(): string {
   return app.getPath('userData');
 }
 
+function getCoversDir(): string {
+  const coversPath = path.join(getDataPath(), 'covers');
+  if (!fs.existsSync(coversPath)) {
+    fs.mkdirSync(coversPath, { recursive: true });
+  }
+  return coversPath;
+}
+
 function ensureDataDir(): void {
   const dataPath = getDataPath();
   if (!fs.existsSync(dataPath)) {
     fs.mkdirSync(dataPath, { recursive: true });
   }
+  getCoversDir();
 }
 
 function readJsonFile<T>(filename: string, defaultValue: T): T {
@@ -77,8 +101,6 @@ function fileExists(filePath: string): boolean {
 }
 
 function getPdfPageCount(filePath: string): Promise<number> {
-  // Read PDF header to get page count - simplified approach
-  // The renderer will use pdf.js for accurate count
   return new Promise((resolve) => {
     try {
       fs.accessSync(filePath, fs.constants.R_OK);
@@ -105,6 +127,26 @@ function scanDirectory(dirPath: string): string[] {
     // Permission denied or other error
   }
   return pdfFiles;
+}
+
+function setupProtocol(): void {
+  protocol.handle('bookly-cover', async (request) => {
+    try {
+      const url = new URL(request.url);
+      const fileName = path.basename(url.pathname);
+      if (!fileName) {
+        return new Response('Not found', { status: 404 });
+      }
+      const filePath = path.join(getCoversDir(), fileName);
+      if (fs.existsSync(filePath)) {
+        return net.fetch(pathToFileURL(filePath).toString());
+      }
+      return new Response('Cover not found', { status: 404 });
+    } catch (err) {
+      console.error('Error handling cover protocol:', err);
+      return new Response('Internal error', { status: 500 });
+    }
+  });
 }
 
 function createWindow(): void {
@@ -267,10 +309,80 @@ function setupIpcHandlers(): void {
       return false;
     }
   });
+
+  // Cover cache handlers
+  ipcMain.handle('cover:save', (_event, bookId: string, base64Data: string) => {
+    if (typeof bookId !== 'string' || typeof base64Data !== 'string') return null;
+    const coversDir = getCoversDir();
+
+    const match = base64Data.match(/^data:image\/([\w+]+);base64,(.+)$/);
+    if (!match) return null;
+
+    let ext = match[1].toLowerCase();
+    if (ext === 'jpeg') ext = 'jpg';
+    if (ext !== 'webp' && ext !== 'png' && ext !== 'jpg') ext = 'webp';
+
+    const buffer = Buffer.from(match[2], 'base64');
+    const fileName = `${bookId}.${ext}`;
+    const filePath = path.join(coversDir, fileName);
+
+    fs.writeFileSync(filePath, buffer);
+    return `bookly-cover://app/${fileName}`;
+  });
+
+  ipcMain.handle('cover:get', (_event, bookId: string) => {
+    if (typeof bookId !== 'string') return null;
+    const coversDir = getCoversDir();
+    for (const ext of ['webp', 'png', 'jpg']) {
+      const fileName = `${bookId}.${ext}`;
+      const filePath = path.join(coversDir, fileName);
+      if (fs.existsSync(filePath)) {
+        return `bookly-cover://app/${fileName}`;
+      }
+    }
+    return null;
+  });
+
+  ipcMain.handle('cover:delete', (_event, bookId: string) => {
+    if (typeof bookId !== 'string') return false;
+    const coversDir = getCoversDir();
+    for (const ext of ['webp', 'png', 'jpg']) {
+      const fileName = `${bookId}.${ext}`;
+      const filePath = path.join(coversDir, fileName);
+      if (fs.existsSync(filePath)) {
+        try {
+          fs.unlinkSync(filePath);
+        } catch {
+          // ignore
+        }
+      }
+    }
+    return true;
+  });
+
+  ipcMain.handle('cover:readAsDataUrl', (_event, bookId: string) => {
+    if (typeof bookId !== 'string') return null;
+    const coversDir = getCoversDir();
+    for (const ext of ['webp', 'png', 'jpg']) {
+      const fileName = `${bookId}.${ext}`;
+      const filePath = path.join(coversDir, fileName);
+      if (fs.existsSync(filePath)) {
+        try {
+          const buffer = fs.readFileSync(filePath);
+          const mime = ext === 'jpg' ? 'image/jpeg' : `image/${ext}`;
+          return `data:${mime};base64,${buffer.toString('base64')}`;
+        } catch {
+          return null;
+        }
+      }
+    }
+    return null;
+  });
 }
 
 app.whenReady().then(() => {
   ensureDataDir();
+  setupProtocol();
   setupIpcHandlers();
   createWindow();
 });

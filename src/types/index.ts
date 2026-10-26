@@ -10,11 +10,13 @@ export interface Book {
   status: 'not-started' | 'reading' | 'completed';
   isManaged: boolean; // true if copied to managed folder
   coverDataUrl: string | null;
+  tags?: string[];
 }
 
 export interface Library {
   books: Book[];
   watchFolder: string | null;
+  tags?: string[];
 }
 
 export interface ReadingProgress {
@@ -37,6 +39,13 @@ export interface HistoryEntry {
 
 export interface ReadingHistory {
   entries: HistoryEntry[];
+}
+
+export interface StreakInfo {
+  currentStreak: number;
+  longestStreak: number;
+  readToday: boolean;
+  lastReadDate: string | null;
 }
 
 export interface AppSettings {

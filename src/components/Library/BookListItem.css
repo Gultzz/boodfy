@@ -88,3 +88,18 @@
   background-color: var(--bg-hover);
   color: var(--text-primary);
 }
+
+
+.book-list-title-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.book-list-tags {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}

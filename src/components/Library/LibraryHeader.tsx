@@ -4,6 +4,7 @@ import { useAppStore } from '@/stores/useAppStore';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ICON_MD } from '@/components/ui/icon';
+import { ReadingStreakBadge } from './ReadingStreakBadge';
 
 export function LibraryHeader() {
   const search = useLibraryStore((s) => s.search);
@@ -34,6 +35,7 @@ export function LibraryHeader() {
         </div>
       </div>
       <div className="app-header-right">
+        <ReadingStreakBadge />
         <Button onClick={addFiles} title="Adicionar PDFs">
           <Plus size={ICON_MD} />
           Adicionar
@@ -51,12 +53,7 @@ export function LibraryHeader() {
             <RefreshCw size={ICON_MD} />
           </Button>
         )}
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => navigateTo('history')}
-          title="Histórico"
-        >
+        <Button variant="ghost" size="icon" onClick={() => navigateTo('history')} title="Histórico">
           <History size={ICON_MD} />
         </Button>
         <Button

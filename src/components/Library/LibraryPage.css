@@ -171,7 +171,8 @@
 }
 
 .toolbar-right {
-  display: flex;
+  display: grid;
+  grid-template-columns: auto auto auto;
   align-items: center;
   gap: 12px;
 }
@@ -200,22 +201,19 @@
   color: var(--accent);
 }
 
-/* Books grid */
+/* Books virtualized containers */
 .books-container {
+  flex: 1;
+  min-height: 0;
   overflow-y: auto;
   padding: 0 24px 24px;
 }
 
-.books-grid {
-  display: flex;
-  flex-direction: row;
-  flex-wrap: wrap;
-  /* grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); */
-  gap: 16px;
+.books-grid-container {
+  overflow-y: auto;
 }
 
-.books-list {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
+.books-list-container {
+  overflow-y: auto;
 }
+

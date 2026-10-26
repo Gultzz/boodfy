@@ -89,6 +89,20 @@ export function BookCard({ book, onClick, onContextMenu, onUnavailableClick }: B
 
       <div className="book-card-info">
         <h3 className="book-card-title truncate">{book.title}</h3>
+
+        {book.tags && book.tags.length > 0 && (
+          <div className="book-card-tags">
+            {book.tags.slice(0, 2).map((tag) => (
+              <span key={tag} className="book-tag-chip" title={tag}>
+                {tag}
+              </span>
+            ))}
+            {book.tags.length > 2 && (
+              <span className="book-tag-chip more">+{book.tags.length - 2}</span>
+            )}
+          </div>
+        )}
+
         {book.totalPages > 0 && (
           <p className="book-card-pages">
             {book.currentPage} / {book.totalPages} páginas

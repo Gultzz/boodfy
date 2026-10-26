@@ -1,6 +1,6 @@
 import { storage } from './storage';
 import { generatePdfCover } from './cover-service';
-import type { Book, HistoryEntry } from '@/types';
+import type { Book, HistoryEntry, Library } from '@/types';
 
 const coverInFlight = new Set<string>();
 
@@ -32,6 +32,7 @@ export const libraryService = {
         status: 'not-started',
         isManaged: false,
         coverDataUrl: null,
+        tags: [],
       };
 
       library.books.push(book);
@@ -52,6 +53,13 @@ export const libraryService = {
       } catch (err) {
         console.warn('Erro ao apagar arquivo gerenciado:', err);
       }
+    }
+
+    // Clean up local cover cache file
+    try {
+      await window.electronAPI.deleteCover(bookId);
+    } catch (err) {
+      console.warn('Erro ao deletar capa em cache:', err);
     }
 
     library.books = library.books.filter((b) => b.id !== bookId);
@@ -99,9 +107,58 @@ export const libraryService = {
     await storage.saveLibrary(library);
   },
 
+  async setBookTags(bookId: string, tags: string[]): Promise<void> {
+    const library = await storage.getLibrary();
+    const index = library.books.findIndex((b) => b.id === bookId);
+    if (index === -1) return;
+
+    const cleanTags = Array.from(new Set(tags.map((t) => t.trim()).filter(Boolean)));
+    library.books[index].tags = cleanTags;
+
+    // Update global tags registry in library
+    const globalTags = new Set(library.tags || []);
+    for (const t of cleanTags) {
+      globalTags.add(t);
+    }
+    library.tags = Array.from(globalTags).sort();
+
+    await storage.saveLibrary(library);
+  },
+
+  async getAllTags(): Promise<string[]> {
+    const library = await storage.getLibrary();
+    const tagsSet = new Set<string>(library.tags || []);
+    for (const book of library.books) {
+      if (book.tags) {
+        for (const t of book.tags) {
+          if (t.trim()) tagsSet.add(t.trim());
+        }
+      }
+    }
+    return Array.from(tagsSet).sort();
+  },
+
+  async deleteTagGlobally(tagToDelete: string): Promise<void> {
+    const library = await storage.getLibrary();
+    library.tags = (library.tags || []).filter((t) => t !== tagToDelete);
+    for (const book of library.books) {
+      if (book.tags) {
+        book.tags = book.tags.filter((t) => t !== tagToDelete);
+      }
+    }
+    await storage.saveLibrary(library);
+  },
+
   async relocateBook(bookId: string): Promise<string | null> {
     const newPath = await window.electronAPI.relocateFile();
     if (!newPath) return null;
+
+    // Delete old cover cache so new one can be generated
+    try {
+      await window.electronAPI.deleteCover(bookId);
+    } catch {
+      // ignore
+    }
 
     await this.updateBook(bookId, { filePath: newPath, coverDataUrl: null });
     return newPath;
@@ -111,10 +168,33 @@ export const libraryService = {
     if (book.coverDataUrl || coverInFlight.has(book.id)) return book;
     coverInFlight.add(book.id);
     try {
+      // First check if cover already exists in local disk cache
+      try {
+        const cachedUrl = await window.electronAPI.getCover(book.id);
+        if (cachedUrl) {
+          const updates: Partial<Book> = { coverDataUrl: cachedUrl };
+          await this.updateBook(book.id, updates);
+          return { ...book, ...updates };
+        }
+      } catch {
+        // continue to generate
+      }
+
       const result = await generatePdfCover(book.filePath);
       if (!result) return book;
 
-      const updates: Partial<Book> = { coverDataUrl: result.coverDataUrl };
+      // Save to local file cache via Electron
+      let coverUrl = result.coverDataUrl;
+      try {
+        const savedUrl = await window.electronAPI.saveCover(book.id, result.coverDataUrl);
+        if (savedUrl) {
+          coverUrl = savedUrl;
+        }
+      } catch (err) {
+        console.warn('Erro ao salvar capa em arquivo local:', err);
+      }
+
+      const updates: Partial<Book> = { coverDataUrl: coverUrl };
       if (!book.totalPages) {
         updates.totalPages = result.totalPages;
       }
@@ -124,6 +204,27 @@ export const libraryService = {
     } finally {
       coverInFlight.delete(book.id);
     }
+  },
+
+  async migrateBase64CoversToDisk(library: Library): Promise<Library> {
+    let hasChanges = false;
+    for (const book of library.books) {
+      if (book.coverDataUrl && book.coverDataUrl.startsWith('data:image/')) {
+        try {
+          const savedUrl = await window.electronAPI.saveCover(book.id, book.coverDataUrl);
+          if (savedUrl) {
+            book.coverDataUrl = savedUrl;
+            hasChanges = true;
+          }
+        } catch (err) {
+          console.warn(`Erro ao migrar capa do livro ${book.id} para arquivo:`, err);
+        }
+      }
+    }
+    if (hasChanges) {
+      await storage.saveLibrary(library);
+    }
+    return library;
   },
 
   async importCopy(bookId: string): Promise<string | null> {
@@ -153,7 +254,7 @@ export const libraryService = {
       currentPage,
       totalPages,
       lastReadAt: now,
-      status: (totalPages > 0 && currentPage >= totalPages) ? 'completed' : 'reading',
+      status: totalPages > 0 && currentPage >= totalPages ? 'completed' : 'reading',
     };
 
     await storage.saveProgress(progress);
@@ -163,7 +264,7 @@ export const libraryService = {
       currentPage,
       totalPages,
       lastReadAt: now,
-      status: (totalPages > 0 && currentPage >= totalPages) ? 'completed' : 'reading',
+      status: totalPages > 0 && currentPage >= totalPages ? 'completed' : 'reading',
     });
   },
 

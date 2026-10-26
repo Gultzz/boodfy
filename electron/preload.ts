@@ -25,6 +25,16 @@ const api = {
   deleteManaged: (filePath: string): Promise<boolean> =>
     ipcRenderer.invoke('file:deleteManaged', filePath),
 
+  // Cover cache
+  saveCover: (bookId: string, base64Data: string): Promise<string | null> =>
+    ipcRenderer.invoke('cover:save', bookId, base64Data),
+  getCover: (bookId: string): Promise<string | null> =>
+    ipcRenderer.invoke('cover:get', bookId),
+  deleteCover: (bookId: string): Promise<boolean> =>
+    ipcRenderer.invoke('cover:delete', bookId),
+  readCoverAsDataUrl: (bookId: string): Promise<string | null> =>
+    ipcRenderer.invoke('cover:readAsDataUrl', bookId),
+
   // App info
   getVersion: (): Promise<string> => ipcRenderer.invoke('app:getVersion'),
   getDataPath: (): Promise<string> => ipcRenderer.invoke('app:getDataPath'),

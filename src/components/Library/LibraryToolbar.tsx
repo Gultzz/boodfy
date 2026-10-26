@@ -25,6 +25,9 @@ export function LibraryToolbar() {
   const setSort = useLibraryStore((s) => s.setSort);
   const viewMode = useLibraryStore((s) => s.viewMode);
   const setViewMode = useLibraryStore((s) => s.setViewMode);
+  const selectedTag = useLibraryStore((s) => s.selectedTag);
+  const setSelectedTag = useLibraryStore((s) => s.setSelectedTag);
+  const allTags = useLibraryStore((s) => s.getAllTags)();
 
   return (
     <div className="library-toolbar">
@@ -43,6 +46,22 @@ export function LibraryToolbar() {
       </div>
 
       <div className="toolbar-right">
+        {allTags.length > 0 && (
+          <select
+            className="input tag-select"
+            value={selectedTag || ''}
+            onChange={(e) => setSelectedTag(e.target.value ? e.target.value : null)}
+            title="Filtrar por tag ou coleção"
+          >
+            <option value="">Todas as coleções / tags</option>
+            {allTags.map((tag) => (
+              <option key={tag} value={tag}>
+                Tag: {tag}
+              </option>
+            ))}
+          </select>
+        )}
+
         <select
           className="input sort-select"
           value={sort}

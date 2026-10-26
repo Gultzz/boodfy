@@ -5,8 +5,7 @@
   cursor: pointer;
   text-align: left;
   width: 100%;
-  max-width: 250px;
-  min-width: 180px;
+  min-width: 0;
   padding: 0;
 }
 
@@ -104,7 +103,6 @@
   color: var(--text-tertiary);
 }
 
-
 .book-card-more-btn {
   position: absolute;
   top: 8px;
@@ -136,33 +134,27 @@
 }
 
 
-.book-card-more-btn {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  width: 28px;
-  height: 28px;
-  border-radius: var(--radius-sm);
-  background-color: hsl(var(--hue-background) / 0.85);
-  backdrop-filter: blur(4px);
-  color: var(--text-primary);
+.book-card-tags {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid var(--border);
-  opacity: 0;
-  transition: opacity var(--transition-fast), background-color var(--transition-fast), color var(--transition-fast);
-  z-index: 2;
-  cursor: pointer;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 2px;
 }
 
-.book-card:hover .book-card-more-btn,
-.book-card-more-btn:focus-visible {
-  opacity: 1;
-}
-
-.book-card-more-btn:hover {
-  background-color: var(--bg-hover);
+.book-tag-chip {
+  font-size: 10px;
+  font-weight: 500;
+  padding: 1px 6px;
+  border-radius: var(--radius-sm);
+  background-color: var(--accent-light, hsl(var(--hue-primary, 220) 90% 56% / 0.12));
   color: var(--accent);
+  max-width: 110px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
+.book-tag-chip.more {
+  color: var(--text-tertiary);
+  background-color: var(--bg-hover);
+}

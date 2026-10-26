@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { Pencil, MapPin, Copy, Trash2 } from 'lucide-react';
+import { Pencil, MapPin, Copy, Trash2, Tag } from 'lucide-react';
 import { libraryService } from '@/services/library-service';
 import type { Book } from '@/types';
 import './BookContextMenu.css';
@@ -10,6 +10,7 @@ interface BookContextMenuProps {
   y: number;
   onClose: () => void;
   onRename: (book: Book) => void;
+  onManageTags: (book: Book) => void;
   onRemove: (book: Book) => void;
   onRelocate: (bookId: string) => void;
 }
@@ -20,6 +21,7 @@ export function BookContextMenu({
   y,
   onClose,
   onRename,
+  onManageTags,
   onRemove,
   onRelocate,
 }: BookContextMenuProps) {
@@ -82,6 +84,19 @@ export function BookContextMenu({
         >
           <Pencil size={14} />
           Renomear
+        </button>
+
+        <button
+          type="button"
+          className="context-menu-item"
+          onClick={(e) => {
+            e.stopPropagation();
+            onClose();
+            onManageTags(book);
+          }}
+        >
+          <Tag size={14} />
+          Gerenciar tags
         </button>
 
         <button
