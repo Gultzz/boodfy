@@ -122,7 +122,13 @@ export function ReaderPage({
         )}
 
         {sidebar === 'outline' && (
-          <ReaderOutline pdf={pdfDoc} onSelectPage={goToPage} onClose={() => setSidebar(null)} />
+          <ReaderOutline
+            pdf={pdfDoc}
+            totalPages={totalPages}
+            currentPage={currentPage}
+            onSelectPage={goToPage}
+            onClose={() => setSidebar(null)}
+          />
         )}
 
         <ReaderViewport

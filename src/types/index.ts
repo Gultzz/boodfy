@@ -80,8 +80,12 @@ export interface Chapter {
   title: string;
   startPage: number;
   endPage: number;
-  /** Profundidade no sumário: 0 = nível principal */
+  /** Profundidade no sumário: 0 = capítulo principal, 1+ = subcapítulo */
   level: number;
+  /** ID do capítulo pai imediato quando for subcapítulo (level > 0) */
+  parentId?: string;
+  /** True quando possui subcapítulos diretamente abaixo */
+  hasChildren?: boolean;
 }
 
 export type QuizQuestionKind =

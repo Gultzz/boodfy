@@ -13,7 +13,6 @@ import {
   Play,
   RefreshCw,
   RotateCcw,
-  Search,
   Settings2,
   Sparkles,
   WifiOff,
@@ -22,7 +21,12 @@ import {
 } from 'lucide-react';
 import type { Book, Chapter, Quiz, QuizQuestion } from '@/types';
 import { useStudyStore } from '@/stores/useStudyStore';
-import { buildChapters } from '@/services/study-chapters';
+import {
+  buildChapters,
+  chapterForPage,
+  formatChapterPageRange,
+} from '@/services/study-chapters';
+import { ChapterOutlineList } from '@/components/common/ChapterOutlineList';
 import { extractPagesText } from '@/services/pdf-text';
 import {
   generateLocalQuiz,
@@ -55,7 +59,7 @@ interface StudentModeProps {
 
 const OPTION_LETTERS = ['A', 'B', 'C', 'D'];
 
-function scoreClass(accuracy: number): string {
+function scoreClass(accuracy: number): 'good' | 'mid' | 'low' {
   if (accuracy >= 0.7) return 'good';
   if (accuracy >= 0.5) return 'mid';
   return 'low';
@@ -66,12 +70,6 @@ function resultMessage(accuracy: number): string {
   if (accuracy >= 0.7) return 'Bom resultado! Vale revisar apenas os pontos que errou.';
   if (accuracy >= 0.5) return 'Quase lá. Releia os trechos indicados ao lado e tente novamente.';
   return 'Este capítulo merece uma releitura atenta antes de refazer o quiz.';
-}
-
-function chapterForPage(chapters: Chapter[], page: number): Chapter | undefined {
-  return chapters
-    .filter((chapter) => page >= chapter.startPage && page <= chapter.endPage)
-    .sort((a, b) => b.level - a.level)[0];
 }
 
 export function StudentMode({
@@ -98,7 +96,7 @@ export function StudentMode({
   const [usedFallback, setUsedFallback] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [chapterPickerOpen, setChapterPickerOpen] = useState(false);
-  const [filter, setFilter] = useState('');
+  const chapterBarRef = useRef<HTMLDivElement | null>(null);
 
   const [phase, setPhase] = useState<Phase>('overview');
   const [quiz, setQuiz] = useState<Quiz | null>(null);
@@ -175,6 +173,18 @@ export function StudentMode({
     };
   }, []);
 
+  // Fecha o dropdown de capítulos ao clicar fora
+  useEffect(() => {
+    if (!chapterPickerOpen) return;
+    const handleOutsideClick = (e: MouseEvent) => {
+      if (chapterBarRef.current && !chapterBarRef.current.contains(e.target as Node)) {
+        setChapterPickerOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleOutsideClick);
+    return () => document.removeEventListener('mousedown', handleOutsideClick);
+  }, [chapterPickerOpen]);
+
   // Monta os capítulos a partir do sumário do PDF (usa cache salvo imediatamente se existir)
   useEffect(() => {
     if (!pdf || totalPages <= 0) {
@@ -185,7 +195,8 @@ export function StudentMode({
     setChaptersError(null);
 
     const existing = dataRef.current.books[book.id];
-    if (existing && existing.chapters && existing.chapters.length > 0) {
+    const isCurrentSignature = existing?.chaptersSignature?.startsWith('v3:');
+    if (isCurrentSignature && existing?.chapters && existing.chapters.length > 0) {
       setChapters(existing.chapters);
       setChaptersLoading(false);
     } else {
@@ -243,12 +254,6 @@ export function StudentMode({
   const selectedChapter = chapters.find((chapter) => chapter.id === selectedId) ?? null;
   const selectedStats = selectedId ? chapterStats.get(selectedId) : undefined;
   const cachedQuiz = selectedChapter ? entry?.quizzes[selectedChapter.id] : undefined;
-
-  const filteredChapters = useMemo(() => {
-    const term = filter.trim().toLowerCase();
-    if (!term) return chapters;
-    return chapters.filter((chapter) => chapter.title.toLowerCase().includes(term));
-  }, [chapters, filter]);
 
   const startQuiz = useCallback(
     async (options?: { forceRegenerate?: boolean; forceMode?: 'ai' | 'local' }) => {
@@ -569,7 +574,7 @@ export function StudentMode({
       </div>
 
       {/* Seletor de Capítulo recolhível */}
-      <div className="student-chapter-bar">
+      <div className="student-chapter-bar" ref={chapterBarRef}>
         <button
           type="button"
           className="student-chapter-trigger"
@@ -578,13 +583,16 @@ export function StudentMode({
         >
           <div className="student-chapter-trigger-info">
             <span className="student-chapter-trigger-label">
-              <ListOrdered size={14} /> Capítulo selecionado ({chapters.length})
+              <ListOrdered size={14} />{' '}
+              {selectedChapter && selectedChapter.level > 0
+                ? `Subcapítulo selecionado (${chapters.length})`
+                : `Capítulo selecionado (${chapters.length})`}
             </span>
             <strong className="truncate">
               {chaptersLoading
                 ? 'Carregando capítulos...'
                 : selectedChapter
-                  ? `${selectedChapter.title} (pp. ${selectedChapter.startPage}–${selectedChapter.endPage})`
+                  ? `${selectedChapter.title} (${formatChapterPageRange(selectedChapter)})`
                   : 'Selecione um capítulo'}
             </strong>
           </div>
@@ -593,54 +601,24 @@ export function StudentMode({
 
         {chapterPickerOpen && (
           <div className="student-chapter-dropdown">
-            {chapters.length > 6 && (
-              <div className="student-search">
-                <Search size={14} />
-                <input
-                  className="input student-search-input"
-                  placeholder="Filtrar capítulos..."
-                  value={filter}
-                  onChange={(event) => setFilter(event.target.value)}
-                />
-              </div>
-            )}
-            {usedFallback && (
-              <p className="student-chapters-note">
-                Este PDF não possui sumário interno. Dividimos em blocos de 10 páginas.
-              </p>
-            )}
-            <div className="student-chapter-list">
-              {filteredChapters.map((chapter) => {
+            <ChapterOutlineList
+              chapters={chapters}
+              activeChapterId={selectedId}
+              usedFallback={usedFallback}
+              onSelectChapter={(chapter) => {
+                setSelectedId(chapter.id);
+                setChapterPickerOpen(false);
+                jumpToPdfPage(chapter.startPage);
+              }}
+              getBadge={(chapter) => {
                 const stats = chapterStats.get(chapter.id);
-                const isSelected = chapter.id === selectedId;
-                return (
-                  <button
-                    key={chapter.id}
-                    type="button"
-                    className={`student-chapter-item ${isSelected ? 'active' : ''}`}
-                    style={{ paddingLeft: `${12 + Math.min(chapter.level, 3) * 12}px` }}
-                    onClick={() => {
-                      setSelectedId(chapter.id);
-                      setChapterPickerOpen(false);
-                      jumpToPdfPage(chapter.startPage);
-                    }}
-                  >
-                    <span className="student-chapter-title">{chapter.title}</span>
-                    <span className="student-chapter-meta">
-                      pp. {chapter.startPage}–{chapter.endPage}
-                    </span>
-                    {stats && (
-                      <span className={`student-chapter-score ${scoreClass(stats.accuracy)}`}>
-                        {formatPercent(stats.accuracy)}
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
-              {filteredChapters.length === 0 && (
-                <p className="student-sidebar-error">Nenhum capítulo encontrado.</p>
-              )}
-            </div>
+                if (!stats) return null;
+                return {
+                  text: formatPercent(stats.accuracy),
+                  tone: scoreClass(stats.accuracy),
+                };
+              }}
+            />
           </div>
         )}
       </div>
