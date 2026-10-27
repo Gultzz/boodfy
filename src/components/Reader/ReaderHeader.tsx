@@ -134,7 +134,6 @@ export function ReaderHeader({
         </form>
       </div>
 
-      {/* Lado Direito: Ações Desktop (telas grandes >= 1024px) */}
       <div className="reader-header-right desktop-actions">
         <ReaderZoomControls
           fitMode={fitMode}
@@ -200,7 +199,6 @@ export function ReaderHeader({
         </button>
       </div>
 
-      {/* Lado Direito Compacto: Menu Hambúrguer (telas < 1024px) */}
       <div className="reader-header-mobile" ref={menuRef}>
         <button
           className={`btn btn-ghost btn-icon ${isMenuOpen ? 'active' : ''}`}
@@ -350,3 +348,4 @@ export function ReaderHeader({
     </header>
   );
 }
+
