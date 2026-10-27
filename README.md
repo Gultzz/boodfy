@@ -1,6 +1,6 @@
-# BooklyPDF — Leitor Pessoal de Livros PDF para Windows
+# Boodfy — Leitor Pessoal de Livros PDF para Windows
 
-O **BooklyPDF** é um aplicativo desktop completo e de alto desempenho para leitura individual e focada de livros em formato PDF no Windows. O projeto utiliza **Electron + React + TypeScript + Vite**, garantindo velocidade, segurança e isolamento total: **todo o armazenamento é local (sem bancos de dados, servidores remotos ou rastreamento)**.
+O **Boodfy** é um aplicativo desktop completo e de alto desempenho para leitura individual e focada de livros em formato PDF no Windows. O projeto utiliza **Electron + React + TypeScript + Vite**, garantindo velocidade, segurança e isolamento total: **todo o armazenamento é local (sem bancos de dados, servidores remotos ou rastreamento)**.
 
 ---
 
@@ -60,8 +60,8 @@ cmd /c "npm run build"
 1. **Biblioteca Local**:
    - Adicione PDFs avulsos ou selecione uma pasta monitorada (com varredura recursiva de subpastas sem duplicatas).
    - Alternância entre visualização em **Grade** e **Lista**.
-   - Filtros: *Todos, Não iniciados, Em andamento, Concluídos, Recentes*.
-   - Ordenação por *Última leitura, Título e Data de adição*.
+   - Filtros: _Todos, Não iniciados, Em andamento, Concluídos, Recentes_.
+   - Ordenação por _Última leitura, Título e Data de adição_.
    - Tratamento de PDFs movidos, renomeados ou indisponíveis com opção de relocalizar o caminho.
    - Opção para importar cópia do arquivo para o diretório gerenciado pelo app.
 
