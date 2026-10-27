@@ -1,11 +1,11 @@
 {
-    "name":  "booklypdf",
+    "name":  "boodfy",
     "version":  "1.0.0",
     "description":  "Leitor pessoal de livros PDF para Windows",
     "main":  "dist-electron/main.js",
     "author":  {
-                   "name":  "BooklyPDF",
-                   "email":  "contato@boodfy.app"
+                   "name":  "Gustavo Schultz",
+                   "email":  "gustavo.schulr@gmail.com"
                },
     "license":  "MIT",
     "scripts":  {
@@ -50,7 +50,7 @@
                             "vite-plugin-electron-renderer":  "^0.14.6"
                         },
     "build":  {
-                  "appId":  "com.booklypdf.app",
+                  "appId":  "com.boodfy.app",
                   "productName":  "Boodfy",
                   "directories":  {
                                       "output":  "release"
