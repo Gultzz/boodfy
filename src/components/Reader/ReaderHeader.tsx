@@ -10,6 +10,10 @@ import {
   GraduationCap,
   Menu,
   X,
+  ZoomIn,
+  ZoomOut,
+  RotateCw,
+  Maximize2,
 } from 'lucide-react';
 import { ReaderZoomControls } from './ReaderZoomControls';
 import type { FitMode } from '@/types';
@@ -93,6 +97,16 @@ export function ReaderHeader({
     }
   };
 
+  const handleZoomIn = () => {
+    onSetFitMode('manual');
+    onSetZoom((z) => Math.min(z + 0.15, 3.0));
+  };
+
+  const handleZoomOut = () => {
+    onSetFitMode('manual');
+    onSetZoom((z) => Math.max(z - 0.15, 0.5));
+  };
+
   return (
     <header className="reader-header">
       {/* Lado Esquerdo: Voltar e Título */}
@@ -105,7 +119,7 @@ export function ReaderHeader({
         </span>
       </div>
 
-      {/* Centro Absoluto: Controle de Páginas (sempre no centro exato) */}
+      {/* Centro Absoluto: Controle de Páginas (sempre no centro superior) */}
       <div className="reader-header-center">
         <form onSubmit={handlePageInputSubmit} className="page-nav-form">
           <input
@@ -120,7 +134,7 @@ export function ReaderHeader({
         </form>
       </div>
 
-      {/* Lado Direito: Ações Desktop (telas a partir de 1024px) */}
+      {/* Lado Direito: Ações Desktop (telas grandes >= 1024px) */}
       <div className="reader-header-right desktop-actions">
         <ReaderZoomControls
           fitMode={fitMode}
@@ -186,7 +200,7 @@ export function ReaderHeader({
         </button>
       </div>
 
-      {/* Lado Direito Compacto: Menu Hambúrguer (telas menores que 1024px) */}
+      {/* Lado Direito Compacto: Menu Hambúrguer (telas < 1024px) */}
       <div className="reader-header-mobile" ref={menuRef}>
         <button
           className={`btn btn-ghost btn-icon ${isMenuOpen ? 'active' : ''}`}
@@ -199,87 +213,136 @@ export function ReaderHeader({
 
         {isMenuOpen && (
           <div className="reader-mobile-dropdown">
+            {/* Seção 1: Ajuste de visualização */}
             <div className="mobile-dropdown-section">
-              <span className="mobile-dropdown-label">Visualização e Zoom</span>
-              <div className="mobile-zoom-wrapper">
-                <ReaderZoomControls
-                  fitMode={fitMode}
-                  zoom={zoom}
-                  onSetFitMode={onSetFitMode}
-                  onSetZoom={onSetZoom}
-                  onResetZoom={onResetZoom}
-                />
+              <span className="mobile-dropdown-label">Ajuste de Tela</span>
+              <div className="mobile-fit-grid">
+                <button
+                  className={`mobile-pill-btn ${fitMode === 'height' ? 'active' : ''}`}
+                  onClick={() => {
+                    onSetFitMode('height');
+                    onSetZoom(() => 1);
+                  }}
+                >
+                  <Maximize2 size={14} />
+                  <span>Ajustar Altura</span>
+                </button>
+                <button
+                  className={`mobile-pill-btn ${fitMode === 'width' ? 'active' : ''}`}
+                  onClick={() => {
+                    onSetFitMode('width');
+                    onSetZoom(() => 1);
+                  }}
+                >
+                  <Maximize2 size={14} style={{ transform: 'rotate(90deg)' }} />
+                  <span>Ajustar Largura</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Seção 2: Controle de Zoom */}
+            <div className="mobile-dropdown-section">
+              <span className="mobile-dropdown-label">Zoom ({Math.round(zoom * 100)}%)</span>
+              <div className="mobile-zoom-bar">
+                <button
+                  className="btn btn-secondary btn-sm"
+                  onClick={handleZoomOut}
+                  disabled={zoom <= 0.5}
+                  title="Diminuir Zoom"
+                >
+                  <ZoomOut size={16} />
+                </button>
+                <button
+                  className="btn btn-secondary btn-sm mobile-zoom-reset"
+                  onClick={onResetZoom}
+                  title="Redefinir 100%"
+                >
+                  <RotateCw size={14} />
+                  <span>100%</span>
+                </button>
+                <button
+                  className="btn btn-secondary btn-sm"
+                  onClick={handleZoomIn}
+                  disabled={zoom >= 3.0}
+                  title="Aumentar Zoom"
+                >
+                  <ZoomIn size={16} />
+                </button>
               </div>
             </div>
 
             <div className="mobile-dropdown-divider" />
 
-            <div className="mobile-dropdown-actions">
-              <button
-                className={`mobile-menu-item ${doublePage ? 'active' : ''}`}
-                onClick={() => {
-                  onToggleDoublePage();
-                  setIsMenuOpen(false);
-                }}
-              >
-                <BookOpen size={18} />
-                <span>{doublePage ? 'Modo Página Única' : 'Modo Página Dupla'}</span>
-              </button>
+            {/* Seção 3: Ações e Modos */}
+            <div className="mobile-dropdown-section">
+              <span className="mobile-dropdown-label">Ferramentas de Leitura</span>
+              <div className="mobile-dropdown-actions">
+                <button
+                  className={`mobile-menu-item ${doublePage ? 'active' : ''}`}
+                  onClick={() => {
+                    onToggleDoublePage();
+                    setIsMenuOpen(false);
+                  }}
+                >
+                  <BookOpen size={18} />
+                  <span>{doublePage ? 'Modo Página Única' : 'Modo Página Dupla'}</span>
+                </button>
 
-              <button
-                className={`mobile-menu-item ${showThumbnails ? 'active' : ''}`}
-                onClick={() => {
-                  onToggleThumbnails();
-                  setIsMenuOpen(false);
-                }}
-              >
-                <Sidebar size={18} />
-                <span>Miniaturas das Páginas</span>
-              </button>
+                <button
+                  className={`mobile-menu-item ${showThumbnails ? 'active' : ''}`}
+                  onClick={() => {
+                    onToggleThumbnails();
+                    setIsMenuOpen(false);
+                  }}
+                >
+                  <Sidebar size={18} />
+                  <span>Miniaturas das Páginas</span>
+                </button>
 
-              <button
-                className={`mobile-menu-item ${showOutline ? 'active' : ''}`}
-                onClick={() => {
-                  onToggleOutline();
-                  setIsMenuOpen(false);
-                }}
-              >
-                <ListTree size={18} />
-                <span>Sumário do Livro</span>
-              </button>
+                <button
+                  className={`mobile-menu-item ${showOutline ? 'active' : ''}`}
+                  onClick={() => {
+                    onToggleOutline();
+                    setIsMenuOpen(false);
+                  }}
+                >
+                  <ListTree size={18} />
+                  <span>Sumário do Livro</span>
+                </button>
 
-              <button
-                className={`mobile-menu-item ${studentMode ? 'active' : ''}`}
-                onClick={() => {
-                  onToggleStudentMode();
-                  setIsMenuOpen(false);
-                }}
-              >
-                <GraduationCap size={18} />
-                <span>Modo Estudante & Quizzes</span>
-              </button>
+                <button
+                  className={`mobile-menu-item ${studentMode ? 'active' : ''}`}
+                  onClick={() => {
+                    onToggleStudentMode();
+                    setIsMenuOpen(false);
+                  }}
+                >
+                  <GraduationCap size={18} />
+                  <span>Modo Estudante & Quizzes</span>
+                </button>
 
-              <button
-                className={`mobile-menu-item ${focusMode ? 'active' : ''}`}
-                onClick={() => {
-                  onToggleFocusMode();
-                  setIsMenuOpen(false);
-                }}
-              >
-                <Eye size={18} />
-                <span>{focusMode ? 'Sair do Modo Foco' : 'Modo Foco'}</span>
-              </button>
+                <button
+                  className={`mobile-menu-item ${focusMode ? 'active' : ''}`}
+                  onClick={() => {
+                    onToggleFocusMode();
+                    setIsMenuOpen(false);
+                  }}
+                >
+                  <Eye size={18} />
+                  <span>{focusMode ? 'Sair do Modo Foco' : 'Modo Foco'}</span>
+                </button>
 
-              <button
-                className="mobile-menu-item"
-                onClick={() => {
-                  onToggleFullscreen();
-                  setIsMenuOpen(false);
-                }}
-              >
-                {isFullscreen ? <Minimize size={18} /> : <Maximize size={18} />}
-                <span>{isFullscreen ? 'Sair da Tela Cheia' : 'Tela Cheia'}</span>
-              </button>
+                <button
+                  className="mobile-menu-item"
+                  onClick={() => {
+                    onToggleFullscreen();
+                    setIsMenuOpen(false);
+                  }}
+                >
+                  {isFullscreen ? <Minimize size={18} /> : <Maximize size={18} />}
+                  <span>{isFullscreen ? 'Sair da Tela Cheia' : 'Tela Cheia'}</span>
+                </button>
+              </div>
             </div>
           </div>
         )}

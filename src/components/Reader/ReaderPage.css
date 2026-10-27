@@ -18,7 +18,7 @@
   background-color: var(--bg-secondary);
   border-bottom: 1px solid var(--border-light);
   height: 52px;
-  z-index: 20;
+  z-index: 30;
   gap: 12px;
   transition:
     transform var(--transition-normal),
@@ -88,7 +88,7 @@
 
 @media (max-width: 540px) {
   .reader-header-left {
-    max-width: 25%;
+    max-width: 22%;
   }
 
   .page-total {
@@ -99,19 +99,22 @@
 /* Dropdown do Menu Hambúrguer */
 .reader-mobile-dropdown {
   position: absolute;
-  top: calc(100% + 10px);
+  top: calc(100% + 8px);
   right: 0;
-  width: 260px;
-  background-color: var(--bg-card);
-  border: 1px solid var(--border-light);
+  width: 290px;
+  max-width: calc(100vw - 24px);
+  max-height: calc(100vh - 72px);
+  overflow-y: auto;
+  background-color: var(--card);
+  border: 1px solid var(--border);
   border-radius: var(--radius-md);
-  box-shadow: var(--shadow-lg);
-  padding: 12px;
+  box-shadow: var(--shadow-lg), 0 10px 30px rgba(0, 0, 0, 0.25);
+  padding: 14px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  z-index: 50;
-  animation: slideDownFade 0.15s ease-out;
+  gap: 12px;
+  z-index: 100;
+  animation: slideDownFade 0.18s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 @keyframes slideDownFade {
@@ -128,29 +131,78 @@
 .mobile-dropdown-section {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
 }
 
 .mobile-dropdown-label {
   font-size: 11px;
   font-weight: 600;
   text-transform: uppercase;
-  color: var(--text-muted);
+  color: var(--muted-foreground);
   letter-spacing: 0.05em;
+  padding: 0 4px;
 }
 
-.mobile-zoom-wrapper {
+/* Grid para Ajuste de Altura e Largura */
+.mobile-fit-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.mobile-pill-btn {
   display: flex;
+  align-items: center;
   justify-content: center;
-  background-color: var(--bg-secondary);
-  padding: 6px;
+  gap: 6px;
+  padding: 7px 10px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-primary);
+  background-color: var(--secondary);
+  border: 1px solid var(--border);
   border-radius: var(--radius-sm);
-  border: 1px solid var(--border-light);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.mobile-pill-btn:hover {
+  background-color: var(--bg-hover);
+  border-color: var(--primary);
+}
+
+.mobile-pill-btn.active {
+  background-color: var(--primary);
+  color: var(--primary-foreground);
+  border-color: var(--primary);
+}
+
+/* Barra de Zoom */
+.mobile-zoom-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.mobile-zoom-bar .btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 32px;
+}
+
+.mobile-zoom-reset {
+  flex: 1.2 !important;
+  font-size: 12px;
+  font-weight: 600;
 }
 
 .mobile-dropdown-divider {
   height: 1px;
-  background-color: var(--border-light);
+  background-color: var(--border);
   margin: 2px 0;
 }
 
