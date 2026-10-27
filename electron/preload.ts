@@ -1,5 +1,18 @@
 import { contextBridge, ipcRenderer } from 'electron';
 
+export interface AiModelOption {
+  id: string;
+  name: string;
+  badge?: string;
+}
+
+export interface AiListModelsResult {
+  ok: boolean;
+  models: AiModelOption[];
+  source: 'live' | 'curated';
+  error?: string;
+}
+
 const api = {
   // Dialogs
   openFileDialog: (): Promise<string[]> => ipcRenderer.invoke('dialog:openFiles'),
@@ -39,6 +52,16 @@ const api = {
   aiSetKey: (key: string): Promise<boolean> => ipcRenderer.invoke('ai:setKey', key),
   aiHasKey: (): Promise<boolean> => ipcRenderer.invoke('ai:hasKey'),
   aiClearKey: (): Promise<boolean> => ipcRenderer.invoke('ai:clearKey'),
+  aiListModels: (payload: {
+    provider: string;
+    baseUrl: string;
+    apiKey?: string;
+  }): Promise<AiListModelsResult> => ipcRenderer.invoke('ai:listModels', payload),
+  aiTest: (payload: {
+    baseUrl: string;
+    model: string;
+    apiKey?: string;
+  }): Promise<{ ok: boolean; error?: string }> => ipcRenderer.invoke('ai:test', payload),
   aiComplete: (payload: {
     baseUrl: string;
     model: string;

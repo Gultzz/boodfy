@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   Sparkles,
   KeyRound,
@@ -11,10 +11,13 @@ import {
   WifiOff,
   ShieldCheck,
   Info,
+  RefreshCw,
+  SlidersHorizontal,
 } from 'lucide-react';
 import { storage } from '@/services/storage';
 import { testAiConnection } from '@/services/quiz-ai';
 import type { AppSettings } from '@/types';
+import type { AiModelOption } from '../../../electron/preload';
 import './AiConfigModal.css';
 
 interface AiConfigModalProps {
@@ -34,24 +37,65 @@ export interface ProviderPreset {
   isLocal?: boolean;
 }
 
+const DEFAULT_FALLBACK_MODELS: Record<string, AiModelOption[]> = {
+  gemini: [
+    { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash', badge: 'Recomendado · Rápido' },
+    { id: 'gemini-2.5-flash-lite', name: 'Gemini 2.5 Flash-Lite', badge: 'Ultrarrápido' },
+    { id: 'gemini-2.0-flash', name: 'Gemini 2.0 Flash', badge: 'Estável e Veloz' },
+    { id: 'gemini-2.0-flash-lite', name: 'Gemini 2.0 Flash-Lite', badge: 'Leve' },
+    { id: 'gemini-2.5-pro', name: 'Gemini 2.5 Pro', badge: 'Raciocínio Avançado' },
+  ],
+  groq: [
+    { id: 'llama-3.3-70b-versatile', name: 'Llama 3.3 70B Versatile', badge: 'Recomendado · Rápido' },
+    { id: 'llama-3.1-8b-instant', name: 'Llama 3.1 8B Instant', badge: 'Instantâneo' },
+    { id: 'meta-llama/llama-4-scout-17b-16e-instruct', name: 'Llama 4 Scout 17B', badge: 'Novo' },
+    { id: 'meta-llama/llama-4-maverick-17b-128e-instruct', name: 'Llama 4 Maverick 17B' },
+    { id: 'qwen-qwq-32b', name: 'Qwen QwQ 32B' },
+    { id: 'gemma2-9b-it', name: 'Gemma 2 9B' },
+  ],
+  openai: [
+    { id: 'gpt-4o-mini', name: 'GPT-4o Mini', badge: 'Recomendado · Rápido' },
+    { id: 'gpt-4.1-mini', name: 'GPT-4.1 Mini', badge: 'Novo · Veloz' },
+    { id: 'gpt-4.1-nano', name: 'GPT-4.1 Nano', badge: 'Ultrarrápido' },
+    { id: 'gpt-4o', name: 'GPT-4o', badge: 'Completo' },
+    { id: 'gpt-4.1', name: 'GPT-4.1', badge: 'Avançado' },
+    { id: 'o4-mini', name: 'o4-mini', badge: 'Raciocínio' },
+  ],
+  openrouter: [
+    { id: 'meta-llama/llama-3.3-70b-instruct:free', name: 'Llama 3.3 70B Instruct', badge: 'Grátis' },
+    { id: 'google/gemini-2.0-flash-exp:free', name: 'Gemini 2.0 Flash', badge: 'Grátis' },
+    { id: 'deepseek/deepseek-chat-v3-0324:free', name: 'DeepSeek V3', badge: 'Grátis' },
+    { id: 'qwen/qwen-2.5-72b-instruct:free', name: 'Qwen 2.5 72B Instruct', badge: 'Grátis' },
+    { id: 'openai/gpt-4o-mini', name: 'OpenAI GPT-4o Mini' },
+  ],
+  ollama: [
+    { id: 'llama3.2', name: 'Llama 3.2 (3B)', badge: 'Recomendado · Local' },
+    { id: 'llama3.1', name: 'Llama 3.1 (8B)' },
+    { id: 'qwen2.5', name: 'Qwen 2.5' },
+    { id: 'mistral', name: 'Mistral 7B' },
+    { id: 'gemma2', name: 'Gemma 2' },
+    { id: 'deepseek-r1', name: 'DeepSeek R1' },
+  ],
+};
+
 const AI_PRESETS: ProviderPreset[] = [
   {
     id: 'gemini',
     name: 'Google Gemini',
     badge: 'Recomendado · Grátis',
     baseUrl: 'https://generativelanguage.googleapis.com/v1beta/openai',
-    model: 'gemini-3.8-flash',
+    model: 'gemini-2.5-flash',
     keyUrl: 'https://aistudio.google.com/app/apikey',
-    keyHint: 'Crie uma chave gratuita no Google AI Studio (suporta gemini-3.8-flash e gemini-3.5-flash-lite)',
+    keyHint: 'Crie uma chave gratuita no Google AI Studio e escolha um dos modelos Gemini disponíveis',
   },
   {
     id: 'groq',
-    name: 'Groq (Llama 3.3)',
+    name: 'Groq (Llama / Qwen)',
     badge: 'Ultrarrápido · Grátis',
     baseUrl: 'https://api.groq.com/openai/v1',
     model: 'llama-3.3-70b-versatile',
     keyUrl: 'https://console.groq.com/keys',
-    keyHint: 'Chave gratuita no console da Groq (gsk_...) - não sobrecarrega e responde instantaneamente',
+    keyHint: 'Chave gratuita no console da Groq (gsk_...) — velocidade instantânea',
   },
   {
     id: 'openai',
@@ -64,10 +108,11 @@ const AI_PRESETS: ProviderPreset[] = [
   {
     id: 'openrouter',
     name: 'OpenRouter',
+    badge: 'Vários Modelos',
     baseUrl: 'https://openrouter.ai/api/v1',
     model: 'meta-llama/llama-3.3-70b-instruct:free',
     keyUrl: 'https://openrouter.ai/keys',
-    keyHint: 'Chave de API do OpenRouter (sk-or-...)',
+    keyHint: 'Chave de API do OpenRouter (sk-or-...) com acesso a dezenas de IAs gratuitas e pagas',
   },
   {
     id: 'ollama',
@@ -87,19 +132,80 @@ const AI_PRESETS: ProviderPreset[] = [
   },
 ];
 
+function formatModelOptionLabel(option: AiModelOption): string {
+  const parts: string[] = [];
+  if (option.name && option.name.toLowerCase() !== option.id.toLowerCase()) {
+    parts.push(`${option.name} (${option.id})`);
+  } else {
+    parts.push(option.id);
+  }
+  if (option.badge) {
+    parts.push(`— ${option.badge}`);
+  }
+  return parts.join(' ');
+}
+
 export function AiConfigModal({ isOpen, onClose, onSaved }: AiConfigModalProps) {
   const [enabled, setEnabled] = useState(false);
   const [selectedProvider, setSelectedProvider] = useState<string>('gemini');
   const [baseUrl, setBaseUrl] = useState('https://generativelanguage.googleapis.com/v1beta/openai');
-  const [model, setModel] = useState('gemini-3.8-flash');
+  const [model, setModel] = useState('gemini-2.5-flash');
+  const [customModelMode, setCustomModelMode] = useState(false);
+  const [showAdvancedUrl, setShowAdvancedUrl] = useState(false);
+
   const [apiKey, setApiKey] = useState('');
   const [hasStoredKey, setHasStoredKey] = useState(false);
+
+  const [availableModels, setAvailableModels] = useState<AiModelOption[]>(
+    DEFAULT_FALLBACK_MODELS.gemini ?? [],
+  );
+  const [modelsSource, setModelsSource] = useState<'live' | 'curated'>('curated');
+  const [loadingModels, setLoadingModels] = useState(false);
 
   const [testing, setTesting] = useState(false);
   const [verified, setVerified] = useState(false);
   const [testResult, setTestResult] = useState<{ ok: boolean; message: string } | null>(null);
   const [saving, setSaving] = useState(false);
   const [settings, setSettings] = useState<AppSettings | null>(null);
+
+  const fetchModels = useCallback(
+    async (providerId: string, targetUrl: string, keyOverride?: string, preferredModel?: string) => {
+      const fallback = DEFAULT_FALLBACK_MODELS[providerId] ?? [];
+      if (!window.electronAPI?.aiListModels) {
+        setAvailableModels(fallback);
+        setModelsSource('curated');
+        return;
+      }
+
+      setLoadingModels(true);
+      try {
+        const res = await window.electronAPI.aiListModels({
+          provider: providerId,
+          baseUrl: targetUrl,
+          apiKey: keyOverride,
+        });
+        const list = res.models && res.models.length > 0 ? res.models : fallback;
+        setAvailableModels(list);
+        setModelsSource(res.source ?? 'curated');
+
+        if (list.length > 0 && providerId !== 'custom') {
+          setModel((currentModel) => {
+            const target = preferredModel ?? currentModel;
+            if (target && list.some((m) => m.id === target)) {
+              return target;
+            }
+            return list[0]?.id ?? target;
+          });
+        }
+      } catch {
+        setAvailableModels(fallback);
+        setModelsSource('curated');
+      } finally {
+        setLoadingModels(false);
+      }
+    },
+    [],
+  );
 
   useEffect(() => {
     if (!isOpen) return;
@@ -110,34 +216,55 @@ export function AiConfigModal({ isOpen, onClose, onSaved }: AiConfigModalProps) 
     ]).then(([s, hasKey]) => {
       setSettings(s);
       setEnabled(s.ai.enabled);
-      setBaseUrl(s.ai.baseUrl || 'https://generativelanguage.googleapis.com/v1beta/openai');
-      setModel(s.ai.model || 'gemini-2.0-flash');
+      const savedUrl = s.ai.baseUrl || 'https://generativelanguage.googleapis.com/v1beta/openai';
+      const savedModel = s.ai.model || 'gemini-2.5-flash';
+      setBaseUrl(savedUrl);
+      setModel(savedModel);
       setHasStoredKey(hasKey);
+      setCustomModelMode(false);
+      setShowAdvancedUrl(false);
 
-      const isLocal = /localhost|127\.0\.0\.1/i.test(s.ai.baseUrl || '');
+      const isLocal = /localhost|127\.0\.0\.1/i.test(savedUrl);
       const previouslyVerified = Boolean(s.ai.verified && (hasKey || isLocal));
       setVerified(previouslyVerified);
       setTestResult(
         previouslyVerified
           ? {
               ok: true,
-              message: `Conexão já verificada e pronta com o modelo "${s.ai.model}".`,
+              message: `Conexão já verificada e pronta com o modelo "${savedModel}".`,
             }
           : null,
       );
 
+      let providerId = 'gemini';
       if (s.ai.provider && AI_PRESETS.some((p) => p.id === s.ai.provider)) {
-        setSelectedProvider(s.ai.provider);
+        providerId = s.ai.provider;
       } else {
         const matching = AI_PRESETS.find(
-          (p) => p.baseUrl && s.ai.baseUrl && s.ai.baseUrl.includes(p.baseUrl.split('/')[2] || ''),
+          (p) => p.baseUrl && savedUrl.includes(p.baseUrl.split('/')[2] || ''),
         );
-        setSelectedProvider(matching?.id ?? 'gemini');
+        providerId = matching?.id ?? 'gemini';
       }
+      setSelectedProvider(providerId);
+      setAvailableModels(DEFAULT_FALLBACK_MODELS[providerId] ?? []);
+      void fetchModels(providerId, savedUrl, undefined, savedModel);
     });
 
     setApiKey('');
-  }, [isOpen]);
+  }, [isOpen, fetchModels]);
+
+  // Quando o usuário cola/digita uma nova chave de API, busca automaticamente os modelos atualizados na API do provedor
+  useEffect(() => {
+    if (!isOpen || !enabled) return;
+    const trimmedKey = apiKey.trim();
+    if (trimmedKey.length < 10) return;
+
+    const timer = setTimeout(() => {
+      void fetchModels(selectedProvider, baseUrl, trimmedKey);
+    }, 450);
+
+    return () => clearTimeout(timer);
+  }, [apiKey, isOpen, enabled, selectedProvider, baseUrl, fetchModels]);
 
   if (!isOpen) return null;
 
@@ -158,10 +285,18 @@ export function AiConfigModal({ isOpen, onClose, onSaved }: AiConfigModalProps) 
 
   const handleSelectPreset = (preset: ProviderPreset) => {
     setSelectedProvider(preset.id);
+    setCustomModelMode(preset.id === 'custom');
+    setShowAdvancedUrl(preset.id === 'custom' || Boolean(preset.isLocal));
     markUnverified();
+
     if (preset.id !== 'custom') {
       setBaseUrl(preset.baseUrl);
       setModel(preset.model);
+      setAvailableModels(DEFAULT_FALLBACK_MODELS[preset.id] ?? []);
+      void fetchModels(preset.id, preset.baseUrl, apiKey.trim() || undefined, preset.model);
+    } else {
+      setAvailableModels([]);
+      setModelsSource('curated');
     }
   };
 
@@ -170,7 +305,7 @@ export function AiConfigModal({ isOpen, onClose, onSaved }: AiConfigModalProps) 
       setVerified(false);
       setTestResult({
         ok: false,
-        message: 'Preencha a URL Base e o nome do Modelo antes de testar.',
+        message: 'Selecione um Provedor e um Modelo antes de testar.',
       });
       return;
     }
@@ -188,16 +323,21 @@ export function AiConfigModal({ isOpen, onClose, onSaved }: AiConfigModalProps) 
     setTestResult(null);
 
     try {
-      if (apiKey.trim()) {
-        await window.electronAPI.aiSetKey(apiKey.trim());
+      const trimmedKey = apiKey.trim();
+      if (trimmedKey) {
+        await window.electronAPI.aiSetKey(trimmedKey);
         setHasStoredKey(true);
         setApiKey('');
       }
 
-      const res = await testAiConnection({
-        baseUrl: baseUrl.trim(),
-        model: model.trim(),
-      });
+      const [res] = await Promise.all([
+        testAiConnection({
+          baseUrl: baseUrl.trim(),
+          model: model.trim(),
+          apiKey: trimmedKey || undefined,
+        }),
+        fetchModels(selectedProvider, baseUrl.trim(), trimmedKey || undefined, model.trim()),
+      ]);
 
       setVerified(res.ok);
       setTestResult(res);
@@ -216,6 +356,8 @@ export function AiConfigModal({ isOpen, onClose, onSaved }: AiConfigModalProps) 
     await window.electronAPI.aiClearKey();
     setHasStoredKey(false);
     setApiKey('');
+    setModelsSource('curated');
+    setAvailableModels(DEFAULT_FALLBACK_MODELS[selectedProvider] ?? []);
     markUnverified();
   };
 
@@ -249,6 +391,10 @@ export function AiConfigModal({ isOpen, onClose, onSaved }: AiConfigModalProps) 
       setSaving(false);
     }
   };
+
+  const isModelInList = availableModels.some((m) => m.id === model);
+  const showCustomModelInput =
+    customModelMode || selectedProvider === 'custom' || availableModels.length === 0;
 
   return (
     <div className="ai-modal-overlay" onClick={onClose}>
@@ -298,7 +444,7 @@ export function AiConfigModal({ isOpen, onClose, onSaved }: AiConfigModalProps) 
               </div>
               <span>
                 {enabled
-                  ? 'A IA analisa o capítulo inteiro e cria perguntas profundas de contexto e entendimento.'
+                  ? 'A IA analisa o capítulo e cria perguntas profundas de contexto e entendimento em poucos segundos.'
                   : 'As perguntas são criadas localmente no computador sem usar Inteligência Artificial.'}
               </span>
             </div>
@@ -331,12 +477,12 @@ export function AiConfigModal({ isOpen, onClose, onSaved }: AiConfigModalProps) 
                 </h4>
                 <p>
                   Com a <strong>Inteligência Artificial ativada</strong>, o capítulo inteiro é
-                  interpretado como um professor faria: você recebe perguntas mais complexas de{' '}
+                  interpretado como um professor faria: você recebe perguntas de{' '}
                   <strong>
                     contexto geral, entendimento profundo da ideia do autor, relação entre conceitos e
                     interpretação crítica
                   </strong>
-                  , com alternativas mais inteligentes e explicações detalhadas.
+                  , com alternativas mais inteligentes e explicações diretas.
                 </p>
                 <p className="ai-explainer-cta">
                   💡 <strong>Dica:</strong> Você pode usar o <strong>Google Gemini</strong> ou{' '}
@@ -355,7 +501,7 @@ export function AiConfigModal({ isOpen, onClose, onSaved }: AiConfigModalProps) 
                   <span className="ai-step-num">1</span>
                   <div>
                     <h4>Escolha qual IA você quer usar</h4>
-                    <p>Selecione o provedor para preencher o endereço e modelo recomendados</p>
+                    <p>Selecione o provedor para carregar automaticamente os modelos disponíveis</p>
                   </div>
                 </div>
 
@@ -387,8 +533,8 @@ export function AiConfigModal({ isOpen, onClose, onSaved }: AiConfigModalProps) 
                   <div>
                     <h4>
                       {isLocalProvider
-                        ? 'Confira o endereço e modelo local'
-                        : `Coloque sua chave de API (${currentPreset?.name ?? 'IA'})`}
+                        ? 'Escolha o modelo local instalado'
+                        : `Coloque sua chave de API e escolha o modelo (${currentPreset?.name ?? 'IA'})`}
                     </h4>
                     <p>{currentPreset?.keyHint}</p>
                   </div>
@@ -451,13 +597,118 @@ export function AiConfigModal({ isOpen, onClose, onSaved }: AiConfigModalProps) 
                   <div className="ai-local-info">
                     <Cpu size={16} />
                     <span>
-                      Provedor local selecionado. Certifique-se de que o servidor local está rodando
-                      em <code>{baseUrl}</code>.
+                      Provedor local selecionado. Certifique-se de que o Ollama está rodando em{' '}
+                      <code>{baseUrl}</code>.
                     </span>
                   </div>
                 )}
 
-                <div className="ai-field-row">
+                {/* Seleção de Modelo via Dropdown atualizado pela API */}
+                <div className="ai-model-section">
+                  <div className="ai-model-header">
+                    <span className="ai-field-label">Modelo de IA</span>
+                    <div className="ai-model-header-actions">
+                      {loadingModels ? (
+                        <span className="ai-models-status loading">
+                          <Loader2 size={12} className="spin" /> Buscando modelos na API...
+                        </span>
+                      ) : modelsSource === 'live' ? (
+                        <span className="ai-models-status live" title="Lista carregada em tempo real da API oficial do provedor">
+                          ● Lista atualizada via API ({availableModels.length} modelos)
+                        </span>
+                      ) : (
+                        <span className="ai-models-status curated">
+                          Modelos recomendados ({availableModels.length})
+                        </span>
+                      )}
+
+                      <button
+                        type="button"
+                        className="ai-refresh-models-btn"
+                        onClick={() =>
+                          void fetchModels(
+                            selectedProvider,
+                            baseUrl.trim(),
+                            apiKey.trim() || undefined,
+                            model,
+                          )
+                        }
+                        disabled={loadingModels}
+                        title="Atualizar lista de modelos disponíveis direto da API"
+                      >
+                        <RefreshCw size={12} className={loadingModels ? 'spin' : ''} />
+                        <span>Atualizar</span>
+                      </button>
+
+                      {selectedProvider !== 'custom' && (
+                        <button
+                          type="button"
+                          className="ai-advanced-url-btn"
+                          onClick={() => setShowAdvancedUrl((prev) => !prev)}
+                          title="Ver/editar URL base da API"
+                        >
+                          <SlidersHorizontal size={12} />
+                          <span>URL</span>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {!showCustomModelInput ? (
+                    <select
+                      className="input ai-model-select"
+                      value={isModelInList ? model : availableModels[0]?.id ?? model}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if (val === '__custom__') {
+                          setCustomModelMode(true);
+                          return;
+                        }
+                        setModel(val);
+                        markUnverified();
+                      }}
+                    >
+                      {!isModelInList && model && (
+                        <option value={model}>{model} (Selecionado atualmente)</option>
+                      )}
+                      {availableModels.map((opt) => (
+                        <option key={opt.id} value={opt.id}>
+                          {formatModelOptionLabel(opt)}
+                        </option>
+                      ))}
+                      <option value="__custom__">✍️ Digitar outro código de modelo manualmente...</option>
+                    </select>
+                  ) : (
+                    <div className="ai-custom-model-row">
+                      <input
+                        className="input"
+                        value={model}
+                        placeholder="Digite o ID exato do modelo (ex: gemini-2.5-flash, gpt-4o-mini)..."
+                        onChange={(e) => {
+                          setModel(e.target.value);
+                          markUnverified();
+                        }}
+                      />
+                      {availableModels.length > 0 && (
+                        <button
+                          type="button"
+                          className="btn btn-secondary btn-sm"
+                          onClick={() => {
+                            setCustomModelMode(false);
+                            if (!model && availableModels[0]) {
+                              setModel(availableModels[0].id);
+                            }
+                          }}
+                        >
+                          Voltar para lista
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* Campo URL Base (sempre visível no modo Custom/Ollama ou quando o botão URL é clicado) */}
+                {(showAdvancedUrl || selectedProvider === 'custom' || isLocalProvider) && (
                   <label className="ai-field">
                     <span className="ai-field-label">URL Base da API</span>
                     <input
@@ -470,24 +721,7 @@ export function AiConfigModal({ isOpen, onClose, onSaved }: AiConfigModalProps) 
                       }}
                     />
                   </label>
-
-                  <label className="ai-field">
-                    <span className="ai-field-label">Modelo</span>
-                    <input
-                      className="input"
-                      value={model}
-                      placeholder={
-                        selectedProvider === 'gemini'
-                          ? 'gemini-3.8-flash ou gemini-3.5-flash-lite'
-                          : 'ex: llama-3.3-70b-versatile'
-                      }
-                      onChange={(e) => {
-                        setModel(e.target.value);
-                        markUnverified();
-                      }}
-                    />
-                  </label>
-                </div>
+                )}
               </div>
 
               {/* PASSO 3 */}
@@ -499,8 +733,7 @@ export function AiConfigModal({ isOpen, onClose, onSaved }: AiConfigModalProps) 
                   <div>
                     <h4>Teste e valide a conexão para liberar o salvamento</h4>
                     <p>
-                      Fazemos um teste real agora para você ter certeza absoluta de que a IA está
-                      funcionando
+                      Verificação instantânea para confirmar que sua chave e o modelo escolhido estão prontos
                     </p>
                   </div>
                 </div>
@@ -514,7 +747,7 @@ export function AiConfigModal({ isOpen, onClose, onSaved }: AiConfigModalProps) 
                   >
                     {testing ? (
                       <>
-                        <Loader2 size={16} className="spin" /> Testando comunicação com a IA...
+                        <Loader2 size={16} className="spin" /> Verificando conexão com a IA...
                       </>
                     ) : verified ? (
                       <>

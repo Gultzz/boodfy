@@ -23,6 +23,9 @@ export interface ChapterBuildResult {
   fallback: boolean;
 }
 
+/** Cache em memória por documento PDF carregado */
+const chaptersCache = new WeakMap<PDFDocumentProxy, ChapterBuildResult>();
+
 /** Hash simples e estável, usado nos ids e na assinatura do sumário */
 function hashString(value: string): string {
   let hash = 5381;
@@ -71,17 +74,27 @@ async function flattenOutline(
   pdf: PDFDocumentProxy,
   nodes: RawOutlineNode[],
   level: number,
-  out: FlatEntry[],
-): Promise<void> {
-  for (const node of nodes) {
-    const page = await resolvePage(pdf, node.dest);
-    if (page !== null) {
-      out.push({ title: cleanTitle(node.title, page), page, level });
-    }
-    if (node.items && node.items.length > 0) {
-      await flattenOutline(pdf, node.items, level + 1, out);
-    }
-  }
+): Promise<FlatEntry[]> {
+  const resolvedNodes = await Promise.all(
+    nodes.map(async (node) => {
+      const [page, children] = await Promise.all([
+        resolvePage(pdf, node.dest),
+        node.items && node.items.length > 0
+          ? flattenOutline(pdf, node.items, level + 1)
+          : Promise.resolve([] as FlatEntry[]),
+      ]);
+      const result: FlatEntry[] = [];
+      if (page !== null) {
+        result.push({ title: cleanTitle(node.title, page), page, level });
+      }
+      if (children.length > 0) {
+        result.push(...children);
+      }
+      return result;
+    }),
+  );
+
+  return resolvedNodes.flat();
 }
 
 /** Capítulos de reserva quando o PDF não traz sumário: blocos de 10 páginas */
@@ -115,12 +128,17 @@ export async function buildChapters(
   pdf: PDFDocumentProxy,
   totalPages: number,
 ): Promise<ChapterBuildResult> {
+  const cached = chaptersCache.get(pdf);
+  if (cached) {
+    return cached;
+  }
+
   let entries: FlatEntry[] = [];
 
   try {
     const outline = (await pdf.getOutline()) as RawOutlineNode[] | null;
     if (outline && outline.length > 0) {
-      await flattenOutline(pdf, outline, 0, entries);
+      entries = await flattenOutline(pdf, outline, 0);
     }
   } catch (err) {
     console.warn('Não foi possível ler o sumário para montar os capítulos:', err);
@@ -133,11 +151,13 @@ export async function buildChapters(
 
   if (entries.length === 0) {
     const chapters = totalPages > 0 ? buildFallbackChapters(totalPages) : [];
-    return {
+    const fallbackResult: ChapterBuildResult = {
       chapters,
       signature: makeChaptersSignature(totalPages, chapters),
       fallback: true,
     };
+    chaptersCache.set(pdf, fallbackResult);
+    return fallbackResult;
   }
 
   const chapters: Chapter[] = [];
@@ -152,7 +172,7 @@ export async function buildChapters(
         break;
       }
     }
-    if (endPage < entry.page) return;
+    if (endPage < entry.page) endPage = entry.page;
 
     const id = `${entry.page}-${hashString(entry.title.toLowerCase())}`;
     if (seenIds.has(id)) return;
@@ -169,17 +189,20 @@ export async function buildChapters(
 
   if (chapters.length === 0) {
     const fallbackChapters = totalPages > 0 ? buildFallbackChapters(totalPages) : [];
-    return {
+    const fallbackResult: ChapterBuildResult = {
       chapters: fallbackChapters,
       signature: makeChaptersSignature(totalPages, fallbackChapters),
       fallback: true,
     };
+    chaptersCache.set(pdf, fallbackResult);
+    return fallbackResult;
   }
 
-  return {
+  const finalResult: ChapterBuildResult = {
     chapters,
     signature: makeChaptersSignature(totalPages, chapters),
     fallback: false,
   };
+  chaptersCache.set(pdf, finalResult);
+  return finalResult;
 }
-

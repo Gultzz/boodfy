@@ -140,7 +140,7 @@ export function StudentMode({
       ]);
       const isLocal = /localhost|127\.0\.0\.1/i.test(s.ai.baseUrl || '');
       setAiEnabled(s.ai.enabled);
-      setAiModel(s.ai.model || 'gemini-2.0-flash');
+      setAiModel(s.ai.model || 'gemini-2.5-flash');
       setAiVerified(Boolean(s.ai.enabled && (hasKey || isLocal)));
     } catch {
       setAiEnabled(false);
@@ -175,15 +175,22 @@ export function StudentMode({
     };
   }, []);
 
-  // Monta os capítulos a partir do sumário do PDF
+  // Monta os capítulos a partir do sumário do PDF (usa cache salvo imediatamente se existir)
   useEffect(() => {
     if (!pdf || totalPages <= 0) {
       setChaptersLoading(false);
       return;
     }
     let cancelled = false;
-    setChaptersLoading(true);
     setChaptersError(null);
+
+    const existing = dataRef.current.books[book.id];
+    if (existing && existing.chapters && existing.chapters.length > 0) {
+      setChapters(existing.chapters);
+      setChaptersLoading(false);
+    } else {
+      setChaptersLoading(true);
+    }
 
     buildChapters(pdf, totalPages)
       .then((result) => {
@@ -199,7 +206,9 @@ export function StudentMode({
       .catch((err) => {
         if (cancelled) return;
         console.error('Erro ao montar os capítulos:', err);
-        setChaptersError('Não foi possível montar os capítulos deste PDF.');
+        if (!existing?.chapters?.length) {
+          setChaptersError('Não foi possível montar os capítulos deste PDF.');
+        }
         setChaptersLoading(false);
       });
 

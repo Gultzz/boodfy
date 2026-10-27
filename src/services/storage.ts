@@ -24,7 +24,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   ai: {
     enabled: false,
     baseUrl: 'https://generativelanguage.googleapis.com/v1beta/openai',
-    model: 'gemini-3.8-flash',
+    model: 'gemini-2.5-flash',
     provider: 'gemini',
     verified: false,
   },
@@ -72,10 +72,18 @@ export const storage = {
 
   async getSettings(): Promise<AppSettings> {
     const data = await read<Partial<AppSettings>>(FILES.settings, DEFAULT_SETTINGS);
+    const mergedAi = { ...DEFAULT_SETTINGS.ai, ...(data.ai ?? {}) };
+    if (
+      mergedAi.model === 'gemini-3.8-flash' ||
+      mergedAi.model === 'gemini-3.6-flash' ||
+      mergedAi.model === 'gemini-3.5-flash-lite'
+    ) {
+      mergedAi.model = 'gemini-2.5-flash';
+    }
     return {
       ...DEFAULT_SETTINGS,
       ...data,
-      ai: { ...DEFAULT_SETTINGS.ai, ...(data.ai ?? {}) },
+      ai: mergedAi,
     };
   },
 

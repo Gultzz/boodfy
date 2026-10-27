@@ -148,15 +148,32 @@ function shuffle<T>(items: T[], random: () => number): T[] {
   return result;
 }
 
+const termRegexCache = new Map<string, RegExp>();
+
+function getTermRegex(term: string, global = false): RegExp {
+  const cacheKey = `${global ? 'g:' : ''}${term.toLowerCase()}`;
+  let compiled = termRegexCache.get(cacheKey);
+  if (!compiled) {
+    compiled = new RegExp(
+      `(?<![\\p{L}])(${escapeRegExp(term)})(?![\\p{L}])`,
+      global ? 'giu' : 'iu',
+    );
+    if (termRegexCache.size > 500) termRegexCache.clear();
+    termRegexCache.set(cacheKey, compiled);
+  }
+  return compiled;
+}
+
 function escapeRegExp(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 function containsTerm(text: string, term: string): boolean {
+  if (!text.toLowerCase().includes(term.toLowerCase())) return false;
   try {
-    return new RegExp(`(?<![\\p{L}])${escapeRegExp(term)}(?![\\p{L}])`, 'iu').test(text);
+    return getTermRegex(term, false).test(text);
   } catch {
-    return text.toLowerCase().includes(term.toLowerCase());
+    return true;
   }
 }
 
@@ -293,14 +310,13 @@ interface AnswerCandidate {
 
 function chooseAnswerTerm(sentence: string, terms: Term[]): AnswerCandidate | null {
   const candidates: AnswerCandidate[] = [];
+  const sentenceLower = sentence.toLowerCase();
 
   for (const term of terms) {
     if (term.text.length < 4) continue;
+    if (!sentenceLower.includes(term.text.toLowerCase())) continue;
     if (isLikelyVerb(term.text)) continue;
-    const pattern = new RegExp(
-      `(?<![\\p{L}])(${escapeRegExp(term.text)})(?![\\p{L}])`,
-      'iu',
-    );
+    const pattern = getTermRegex(term.text, false);
     const match = pattern.exec(sentence);
     if (!match || match.index === undefined) continue;
     if (match.index === 0) continue;
@@ -719,8 +735,10 @@ export function generateLocalQuiz(pages: PageText[], chapter: Chapter, seedSuffi
   }
 
   const random = mulberry32(hashSeed(`${chapter.id}:${QUIZ_GENERATOR_VERSION}:${seedSuffix}`));
-  const terms = Array.from(collectTerms(usablePages).values()).sort((a, b) => b.score - a.score);
-  const sentences = collectSentences(usablePages);
+  const terms = Array.from(collectTerms(usablePages).values())
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 75);
+  const sentences = collectSentences(usablePages).slice(0, 140);
 
   if (terms.length < 4 || sentences.length < 4) {
     throw new QuizGenerationError(

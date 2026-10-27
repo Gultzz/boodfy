@@ -2,11 +2,17 @@ import type { Chapter, QuizQuestion } from '@/types';
 import type { PageText } from './pdf-text';
 import { MIN_QUIZ_QUESTIONS, QUESTIONS_PER_QUIZ } from './quiz-generator';
 
-const MAX_CORPUS_CHARS = 45000;
+/**
+ * Limite otimizado de caracteres (~3.000 tokens) para garantir:
+ * - Resposta da IA 3x a 5x mais rápida (menor tempo de prefill e geração)
+ * - Compatibilidade com limites gratuitos de tokens por minuto (Groq, Gemini Free, OpenRouter)
+ */
+const MAX_CORPUS_CHARS = 12000;
 
 export interface AiQuizConfig {
   baseUrl: string;
   model: string;
+  apiKey?: string;
 }
 
 export class AiQuizError extends Error {
@@ -17,7 +23,7 @@ export class AiQuizError extends Error {
 }
 
 /**
- * Constrói o texto do capítulo cobrindo todas as páginas de forma equilibrada.
+ * Constrói o texto do capítulo cobrindo todas as páginas extraídas de forma equilibrada.
  */
 function buildCorpus(pages: PageText[]): string {
   const validPages = pages.filter((p) => p.text.trim().length > 0);
@@ -27,70 +33,41 @@ function buildCorpus(pages: PageText[]): string {
 
   if (totalLength <= MAX_CORPUS_CHARS) {
     return validPages
-      .map((p) => `\n[Página ${p.pageNumber}]\n${p.text.trim()}\n`)
-      .join('\n');
+      .map((p) => `[Página ${p.pageNumber}]\n${p.text.trim()}`)
+      .join('\n\n');
   }
 
-  const budgetPerPage = Math.max(300, Math.floor(MAX_CORPUS_CHARS / validPages.length));
+  const budgetPerPage = Math.max(250, Math.floor(MAX_CORPUS_CHARS / validPages.length));
   const chunks: string[] = [];
 
   for (const page of validPages) {
     const text = page.text.trim();
     const excerpt = text.length <= budgetPerPage ? text : `${text.slice(0, budgetPerPage)}...`;
-    chunks.push(`\n[Página ${page.pageNumber}]\n${excerpt}\n`);
+    chunks.push(`[Página ${page.pageNumber}]\n${excerpt}`);
   }
 
-  return chunks.join('\n').slice(0, MAX_CORPUS_CHARS);
+  return chunks.join('\n\n').slice(0, MAX_CORPUS_CHARS);
 }
 
 function buildMessages(corpus: string, chapter: Chapter): { role: string; content: string }[] {
   const system =
-    'Você é um professor universitário e pedagogo especialista em elaboração de exames de compreensão, ' +
-    'análise crítica e retenção de leitura em português do Brasil. ' +
-    'Sua missão é criar perguntas de múltipla escolha profundas, conceituais e contextuais que avaliem se o estudante ' +
-    'realmente compreendeu o conteúdo, teses centrais, relações de causa/efeito e ideias explicadas no capítulo. ' +
-    'Responda ESTRITAMENTE em formato JSON válido, sem texto fora do JSON.';
+    'Você é um professor especialista em criar questões de compreensão e retenção de leitura em português do Brasil. ' +
+    'Responda ESTRITAMENTE em JSON válido, sem markdown e sem texto fora do JSON.';
 
-  const user = `Analise atentamente o texto do capítulo "${chapter.title}" e gere exatamente ${QUESTIONS_PER_QUIZ} perguntas de múltipla escolha de alto nível.
+  const user = `Com base no capítulo "${chapter.title}", gere exatamente ${QUESTIONS_PER_QUIZ} perguntas de múltipla escolha que avaliem a compreensão real das ideias centrais, causas/efeitos e conceitos do texto (abrangendo início, meio e fim).
 
-OBJETIVO DO QUIZ:
-Avaliar a compreensão real do capítulo inteiro (não decoreba de palavras soltas ou números isolados).
-As perguntas devem abranger diferentes seções do capítulo (início, meio e fim).
+REGRAS:
+- Não use perguntas de preencher lacuna ("____").
+- "question": pergunta clara e contextualizada.
+- "options": exatamente 4 alternativas objetivas (1 frase cada).
+- "correctIndex": índice da correta (0, 1, 2 ou 3).
+- "sourcePage": número inteiro da página [Página N] de onde veio o conceito.
+- "explanation": explicação direta (1 a 2 frases) justificando a resposta correta.
 
-TIPOS DE PERGUNTAS QUE VOCÊ DEVE COMBINAR:
-1. Compreensão Global e Ideia Central: O que o autor defende, qual o propósito principal ou a tese central apresentada.
-2. Causa e Efeito: Por que determinado fato, conceito ou fenômeno ocorre e quais são seus desdobramentos segundo o texto.
-3. Relação entre Conceitos: Como duas ideias, teorias ou definições apresentadas no capítulo se conectam ou se diferenciam.
-4. Análise de Contexto: O que uma afirmação ou exemplo do texto demonstra no contexto geral do capítulo.
+FORMATO JSON OBRIGATÓRIO:
+{"questions":[{"question":"...","options":["A","B","C","D"],"correctIndex":0,"sourcePage":${chapter.startPage},"explanation":"..."}]}
 
-DIRETRIZES OBRIGATÓRIAS:
-- NUNCA faça perguntas no estilo "complete a frase" com lacunas ("______").
-- O enunciado ("question") deve ser uma pergunta completa, clara e contextualizada (mínimo de 12 a 30 palavras).
-- Cada pergunta deve ter exatamente 4 alternativas ("options"), e cada alternativa deve ser uma frase explicativa completa e bem redigida.
-- Apenas 1 alternativa deve ser a correta ("correctIndex": 0, 1, 2 ou 3).
-- As 3 alternativas incorretas devem ser plausíveis para quem leu superficialmente, mas conceitualmente incorretas de acordo com a explicação do autor.
-- "sourcePage": número inteiro da página (indicada nos marcadores [Página N]) onde o conteúdo da pergunta é tratado.
-- "explanation": justificativa clara e didática de 2 a 4 linhas explicando por que a alternativa correta é a verdadeira, sintetizando o raciocínio do autor.
-
-FORMATO JSON OBRIGATÓRIAMENTE VÁLIDO:
-{
-  "questions": [
-    {
-      "question": "Pergunta completa, conceitual e contextualizada sobre o conteúdo do capítulo?",
-      "options": [
-        "Primeira alternativa formulada como frase completa...",
-        "Segunda alternativa formulada como frase completa...",
-        "Terceira alternativa formulada como frase completa...",
-        "Quarta alternativa formulada como frase completa..."
-      ],
-      "correctIndex": 0,
-      "sourcePage": 12,
-      "explanation": "Explicação didática fundamentada no texto justificando a resposta correta."
-    }
-  ]
-}
-
-TEXTO DO CAPÍTULO:
+TEXTO:
 ${corpus}`;
 
   return [
@@ -203,7 +180,7 @@ export async function generateAiQuiz(
   config: AiQuizConfig,
 ): Promise<QuizQuestion[]> {
   const corpus = buildCorpus(pages);
-  if (corpus.length < 250) {
+  if (corpus.length < 200) {
     throw new AiQuizError('Não há texto legível suficiente neste capítulo para a IA analisar.');
   }
 
@@ -232,31 +209,27 @@ export async function generateAiQuiz(
 }
 
 /**
- * Testa a conexão com o provedor de IA enviando uma requisição real de verificação.
+ * Testa a conexão com o provedor de IA de forma ultrarrápida.
  */
 export async function testAiConnection(
   config: AiQuizConfig,
 ): Promise<{ ok: boolean; message: string }> {
   try {
-    const result = await window.electronAPI.aiComplete({
+    const result = await window.electronAPI.aiTest({
       baseUrl: config.baseUrl,
       model: config.model,
-      messages: [
-        {
-          role: 'user',
-          content: 'Responda apenas com a palavra CONECTADO para validar a chave de API.',
-        },
-      ],
+      apiKey: config.apiKey,
     });
-    if (result.ok && result.content) {
+    if (result.ok) {
       return {
         ok: true,
-        message: `Tudo certo! O modelo "${config.model}" respondeu com sucesso e está pronto para criar seus quizzes.`,
+        message: `Tudo certo! O modelo "${config.model}" respondeu rapidamente e está pronto para criar seus quizzes.`,
       };
     }
     return {
       ok: false,
-      message: result.error || 'O provedor não respondeu corretamente. Verifique sua chave e modelo.',
+      message:
+        result.error || 'O provedor não respondeu corretamente. Verifique sua chave e o modelo selecionado.',
     };
   } catch (err) {
     return {
@@ -265,4 +238,3 @@ export async function testAiConnection(
     };
   }
 }
-
