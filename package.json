@@ -1,75 +1,92 @@
 {
-  "name": "booklypdf",
-  "version": "1.0.0",
-  "description": "Leitor pessoal de livros PDF para Windows",
-  "main": "dist-electron/main.js",
-  "author": "BooklyPDF",
-  "license": "MIT",
-  "scripts": {
-    "dev": "vite",
-    "build": "tsc && vite build && electron-builder",
-    "build:vite": "tsc && vite build",
-    "preview": "vite preview",
-    "lint": "eslint . --ext .ts,.tsx --max-warnings 0",
-    "lint:fix": "eslint . --ext .ts,.tsx --fix",
-    "format": "prettier --write \"src/**/*.{ts,tsx,css}\" \"electron/**/*.ts\"",
-    "format:check": "prettier --check \"src/**/*.{ts,tsx,css}\" \"electron/**/*.ts\"",
-    "typecheck": "tsc --noEmit",
-    "check-all": "npm run typecheck && npm run lint"
-  },
-  "dependencies": {
-    "@fontsource-variable/inter": "^5.3.0",
-    "@tanstack/react-virtual": "^3.14.22",
-    "lucide-react": "^0.468.0",
-    "pdfjs-dist": "4.8.69",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
-    "react-pdf": "^9.2.1",
-    "zustand": "^5.0.16"
-  },
-  "devDependencies": {
-    "@eslint/js": "^9.16.0",
-    "@types/react": "^18.3.12",
-    "@types/react-dom": "^18.3.1",
-    "@vitejs/plugin-react": "^4.3.4",
-    "electron": "^33.2.1",
-    "electron-builder": "^25.1.8",
-    "eslint": "^9.16.0",
-    "eslint-config-prettier": "^9.1.0",
-    "eslint-plugin-react-hooks": "^5.1.0",
-    "eslint-plugin-react-refresh": "^0.4.16",
-    "globals": "^15.13.0",
-    "prettier": "^3.4.2",
-    "typescript": "^5.7.2",
-    "typescript-eslint": "^8.17.0",
-    "vite": "^6.0.3",
-    "vite-plugin-electron": "^0.28.8",
-    "vite-plugin-electron-renderer": "^0.14.6"
-  },
-  "build": {
-    "appId": "com.booklypdf.app",
-    "productName": "Boodfy",
-    "directories": {
-      "output": "release"
-    },
-    "files": [
-      "dist/**/*",
-      "dist-electron/**/*"
-    ],
-    "win": {
-      "target": [
-        "nsis"
-      ],
-      "icon": "public/icon.png"
-    },
-    "nsis": {
-      "oneClick": false,
-      "allowToChangeInstallationDirectory": true,
-      "installerLanguages": [
-        "pt_BR"
-      ],
-      "language": "1046"
-    }
-  },
-  "productName": "Boodfy"
+    "name":  "booklypdf",
+    "version":  "1.0.0",
+    "description":  "Leitor pessoal de livros PDF para Windows",
+    "main":  "dist-electron/main.js",
+    "author":  "BooklyPDF",
+    "license":  "MIT",
+    "scripts":  {
+                    "dev":  "vite",
+                    "build":  "tsc \u0026\u0026 vite build \u0026\u0026 electron-builder",
+                    "build:vite":  "tsc \u0026\u0026 vite build",
+                    "preview":  "vite preview",
+                    "lint":  "eslint . --ext .ts,.tsx --max-warnings 0",
+                    "lint:fix":  "eslint . --ext .ts,.tsx --fix",
+                    "format":  "prettier --write \"src/**/*.{ts,tsx,css}\" \"electron/**/*.ts\"",
+                    "format:check":  "prettier --check \"src/**/*.{ts,tsx,css}\" \"electron/**/*.ts\"",
+                    "typecheck":  "tsc --noEmit",
+                    "check-all":  "npm run typecheck \u0026\u0026 npm run lint"
+                },
+    "dependencies":  {
+                         "@fontsource-variable/inter":  "^5.3.0",
+                         "@tanstack/react-virtual":  "^3.14.22",
+                         "lucide-react":  "^0.468.0",
+                         "pdfjs-dist":  "4.8.69",
+                         "react":  "^18.3.1",
+                         "react-dom":  "^18.3.1",
+                         "react-pdf":  "^9.2.1",
+                         "zustand":  "^5.0.16"
+                     },
+    "devDependencies":  {
+                            "@eslint/js":  "^9.16.0",
+                            "@types/react":  "^18.3.12",
+                            "@types/react-dom":  "^18.3.1",
+                            "@vitejs/plugin-react":  "^4.3.4",
+                            "electron":  "^33.2.1",
+                            "electron-builder":  "^25.1.8",
+                            "eslint":  "^9.16.0",
+                            "eslint-config-prettier":  "^9.1.0",
+                            "eslint-plugin-react-hooks":  "^5.1.0",
+                            "eslint-plugin-react-refresh":  "^0.4.16",
+                            "globals":  "^15.13.0",
+                            "prettier":  "^3.4.2",
+                            "typescript":  "^5.7.2",
+                            "typescript-eslint":  "^8.17.0",
+                            "vite":  "^6.0.3",
+                            "vite-plugin-electron":  "^0.28.8",
+                            "vite-plugin-electron-renderer":  "^0.14.6"
+                        },
+    "build":  {
+                  "appId":  "com.booklypdf.app",
+                  "productName":  "Boodfy",
+                  "directories":  {
+                                      "output":  "release"
+                                  },
+                  "files":  [
+                                "dist/**/*",
+                                "dist-electron/**/*"
+                            ],
+                  "win":  {
+                              "target":  [
+                                             "nsis"
+                                         ],
+                              "icon":  "public/icon.png"
+                          },
+                  "nsis":  {
+                               "oneClick":  false,
+                               "allowToChangeInstallationDirectory":  true,
+                               "installerLanguages":  [
+                                                          "pt_BR"
+                                                      ],
+                               "language":  "1046"
+                           },
+                  "mac":  {
+                              "target":  [
+                                             "dmg",
+                                             "zip"
+                                         ],
+                              "icon":  "public/icon.png",
+                              "category":  "public.app-category.education"
+                          },
+                  "linux":  {
+                                "target":  [
+                                               "AppImage",
+                                               "deb",
+                                               "tar.gz"
+                                           ],
+                                "icon":  "public/icon.png",
+                                "category":  "Utility"
+                            }
+              },
+    "productName":  "Boodfy"
 }
