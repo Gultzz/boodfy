@@ -35,6 +35,17 @@ const api = {
   readCoverAsDataUrl: (bookId: string): Promise<string | null> =>
     ipcRenderer.invoke('cover:readAsDataUrl', bookId),
 
+  // Provedor de IA opcional (a chave fica no processo principal)
+  aiSetKey: (key: string): Promise<boolean> => ipcRenderer.invoke('ai:setKey', key),
+  aiHasKey: (): Promise<boolean> => ipcRenderer.invoke('ai:hasKey'),
+  aiClearKey: (): Promise<boolean> => ipcRenderer.invoke('ai:clearKey'),
+  aiComplete: (payload: {
+    baseUrl: string;
+    model: string;
+    messages: { role: string; content: string }[];
+  }): Promise<{ ok: boolean; content?: string; error?: string }> =>
+    ipcRenderer.invoke('ai:complete', payload),
+
   // App info
   getVersion: (): Promise<string> => ipcRenderer.invoke('app:getVersion'),
   getDataPath: (): Promise<string> => ipcRenderer.invoke('app:getDataPath'),
@@ -45,6 +56,7 @@ const api = {
 
   // Shell
   openPath: (dirPath: string): Promise<void> => ipcRenderer.invoke('shell:openPath', dirPath),
+  openExternal: (url: string): Promise<void> => ipcRenderer.invoke('shell:openExternal', url),
 };
 
 contextBridge.exposeInMainWorld('electronAPI', api);

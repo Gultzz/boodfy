@@ -1,4 +1,12 @@
-import { BookOpen, Search, Plus, FolderOpen, RefreshCw, History, Settings } from 'lucide-react';
+import {
+  Search,
+  Plus,
+  FolderOpen,
+  RefreshCw,
+  History,
+  GraduationCap,
+  Settings,
+} from 'lucide-react';
 import { useLibraryStore } from '@/stores/useLibraryStore';
 import { useAppStore } from '@/stores/useAppStore';
 import { Button } from '@/components/ui/button';
@@ -19,8 +27,11 @@ export function LibraryHeader() {
     <header className="app-header library-header">
       <div className="app-header-left">
         <h1 className="app-header-title">
-          <BookOpen size={ICON_MD} />
-          BooklyPDF
+          <img
+            src="./logo-extended.png"
+            alt="Boodfy"
+            className="app-header-logo"
+          />
         </h1>
       </div>
       <div className="library-header-center">
@@ -53,6 +64,9 @@ export function LibraryHeader() {
             <RefreshCw size={ICON_MD} />
           </Button>
         )}
+        <Button variant="ghost" size="icon" onClick={() => navigateTo('study')} title="Estudos">
+          <GraduationCap size={ICON_MD} />
+        </Button>
         <Button variant="ghost" size="icon" onClick={() => navigateTo('history')} title="Histórico">
           <History size={ICON_MD} />
         </Button>

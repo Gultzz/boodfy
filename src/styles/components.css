@@ -395,6 +395,17 @@ select.input {
   flex-shrink: 0;
 }
 
+.app-header-logo {
+  height: 28px;
+  width: auto;
+  display: block;
+  object-fit: contain;
+}
+
+[data-theme='light'] .app-header-logo {
+  filter: invert(1);
+}
+
 .app-header-title {
   display: flex;
   align-items: center;

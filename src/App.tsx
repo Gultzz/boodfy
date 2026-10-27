@@ -3,6 +3,7 @@ import { LibraryPage } from '@/components/Library/LibraryPage';
 import { ReaderPage } from '@/components/Reader/ReaderPage';
 import { HistoryPage } from '@/components/History/HistoryPage';
 import { SettingsPage } from '@/components/Settings/SettingsPage';
+import { StudyPage } from '@/components/Study/StudyPage';
 import { ErrorBoundary } from '@/components/common/ErrorBoundary';
 import { useAppStore } from '@/stores/useAppStore';
 import { useThemeStore } from '@/stores/useThemeStore';
@@ -11,6 +12,7 @@ export function App() {
   const initializeTheme = useThemeStore((s) => s.initializeTheme);
   const currentPage = useAppStore((s) => s.currentPage);
   const currentBook = useAppStore((s) => s.currentBook);
+  const readerEntry = useAppStore((s) => s.readerEntry);
   const backToLibrary = useAppStore((s) => s.backToLibrary);
 
   useEffect(() => {
@@ -23,11 +25,18 @@ export function App() {
 
       {currentPage === 'reader' && currentBook && (
         <ErrorBoundary onReset={backToLibrary}>
-          <ReaderPage book={currentBook} onBack={backToLibrary} />
+          <ReaderPage
+            book={currentBook}
+            onBack={backToLibrary}
+            startPage={readerEntry.page}
+            initialStudyChapterId={readerEntry.chapterId}
+          />
         </ErrorBoundary>
       )}
 
       {currentPage === 'history' && <HistoryPage />}
+
+      {currentPage === 'study' && <StudyPage />}
 
       {currentPage === 'settings' && <SettingsPage />}
     </div>

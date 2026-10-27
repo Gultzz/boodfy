@@ -6,13 +6,9 @@ import type { Book, FitMode } from '@/types';
 interface UseReaderProps {
   book: Book | null;
   onBack: () => void;
+  startPage?: number | null;
 }
 
-/**
- * Intervalo de páginas visível em modo página dupla.
- * A página 1 (capa) fica isolada; depois os pares começam na página 2:
- * [1], [2,3], [4,5], ...
- */
 export function getSpreadRange(page: number, totalPages: number): { first: number; last: number } {
   if (page <= 1) return { first: 1, last: 1 };
   const first = page % 2 === 0 ? page : page - 1;
@@ -20,7 +16,7 @@ export function getSpreadRange(page: number, totalPages: number): { first: numbe
   return { first, last };
 }
 
-export function useReader({ book, onBack }: UseReaderProps) {
+export function useReader({ book, onBack, startPage = null }: UseReaderProps) {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
   const [pdfData, setPdfData] = useState<ArrayBuffer | null>(null);
@@ -35,17 +31,20 @@ export function useReader({ book, onBack }: UseReaderProps) {
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const bookRef = useRef(book);
   const currentPageRef = useRef(currentPage);
+  const startPageRef = useRef(startPage);
 
   bookRef.current = book;
   currentPageRef.current = currentPage;
+  startPageRef.current = startPage;
 
-  // Load PDF
   useEffect(() => {
     if (!book) return;
     setLoading(true);
     setError(null);
     setPdfData(null);
     setPdfDoc(null);
+
+    const initialPage = startPageRef.current ?? book.currentPage ?? 1;
 
     (async () => {
       try {
@@ -57,7 +56,7 @@ export function useReader({ book, onBack }: UseReaderProps) {
         }
         const data = await window.electronAPI.readPdf(book.filePath);
         setPdfData(data);
-        setCurrentPage(book.currentPage || 1);
+        setCurrentPage(initialPage);
       } catch (err) {
         const msg = err instanceof Error ? err.message : 'Erro ao abrir o PDF';
         setError(msg);
@@ -66,18 +65,15 @@ export function useReader({ book, onBack }: UseReaderProps) {
       }
     })();
 
-    // Add history entry
-    libraryService.addHistoryEntry(book.id, book.title, book.currentPage || 1);
+    libraryService.addHistoryEntry(book.id, book.title, initialPage);
 
     return () => {
-      // Save on unmount
       if (bookRef.current && currentPageRef.current > 0) {
         libraryService.updateLastHistoryEntry(currentPageRef.current);
       }
     };
   }, [book]);
 
-  // Save progress with debounce
   const saveProgress = useCallback(
     (page: number) => {
       if (!book || totalPages === 0) return;
@@ -158,12 +154,10 @@ export function useReader({ book, onBack }: UseReaderProps) {
     setDoublePage((prev) => !prev);
   }, []);
 
-  // Guarda o documento aberto para o sumário (outline) poder ser lido depois
   const onDocumentReady = useCallback((pdf: PDFDocumentProxy) => {
     setPdfDoc(pdf);
   }, []);
 
-  // Páginas visíveis agora: uma no modo simples, o par atual no modo duplo
   const visiblePages = useMemo(() => {
     if (!doublePage) return [currentPage];
     const { first, last } = getSpreadRange(currentPage, totalPages);
@@ -178,7 +172,6 @@ export function useReader({ book, onBack }: UseReaderProps) {
     if (book && currentPage > 0 && totalPages > 0) {
       await libraryService.updateProgress(book.id, currentPage, totalPages);
       await libraryService.updateLastHistoryEntry(currentPage);
-      // Check if completed
       if (currentPage >= totalPages) {
         await libraryService.markCompleted(book.id);
       }
@@ -186,7 +179,6 @@ export function useReader({ book, onBack }: UseReaderProps) {
     onBack();
   }, [book, currentPage, totalPages, onBack]);
 
-  // Keyboard navigation
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement;

@@ -3,9 +3,16 @@ const FILES = {
   progress: 'reading-progress.json',
   history: 'reading-history.json',
   settings: 'settings.json',
+  study: 'study-progress.json',
 } as const;
 
-import type { Library, ReadingProgress, ReadingHistory, AppSettings } from '@/types';
+import type {
+  Library,
+  ReadingProgress,
+  ReadingHistory,
+  AppSettings,
+  StudyData,
+} from '@/types';
 
 const DEFAULT_LIBRARY: Library = { books: [], watchFolder: null };
 const DEFAULT_PROGRESS: ReadingProgress = {};
@@ -14,7 +21,15 @@ const DEFAULT_SETTINGS: AppSettings = {
   theme: 'system',
   defaultFitMode: 'height',
   watchFolder: null,
+  ai: {
+    enabled: false,
+    baseUrl: 'https://generativelanguage.googleapis.com/v1beta/openai',
+    model: 'gemini-3.8-flash',
+    provider: 'gemini',
+    verified: false,
+  },
 };
+const DEFAULT_STUDY: StudyData = { version: 1, books: {} };
 
 async function read<T>(file: string, defaultValue: T): Promise<T> {
   try {
@@ -56,10 +71,25 @@ export const storage = {
   },
 
   async getSettings(): Promise<AppSettings> {
-    return read(FILES.settings, DEFAULT_SETTINGS);
+    const data = await read<Partial<AppSettings>>(FILES.settings, DEFAULT_SETTINGS);
+    return {
+      ...DEFAULT_SETTINGS,
+      ...data,
+      ai: { ...DEFAULT_SETTINGS.ai, ...(data.ai ?? {}) },
+    };
   },
 
   async saveSettings(settings: AppSettings): Promise<void> {
     await write(FILES.settings, settings);
+  },
+
+  async getStudy(): Promise<StudyData> {
+    const data = await read<StudyData>(FILES.study, DEFAULT_STUDY);
+    if (!data || typeof data !== 'object' || !data.books) return DEFAULT_STUDY;
+    return { version: data.version ?? 1, books: data.books };
+  },
+
+  async saveStudy(study: StudyData): Promise<void> {
+    await write(FILES.study, study);
   },
 };

@@ -1,10 +1,11 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useReader } from '@/hooks/useReader';
 import { ReaderHeader } from './ReaderHeader';
 import { ReaderViewport } from './ReaderViewport';
 import { ReaderFooter } from './ReaderFooter';
 import { PageThumbnails } from './PageThumbnails';
 import { ReaderOutline } from './ReaderOutline';
+import { StudentMode } from '@/components/Study/StudentMode';
 import type { Book } from '@/types';
 import './ReaderPage.css';
 import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
@@ -13,9 +14,24 @@ import 'react-pdf/dist/esm/Page/TextLayer.css';
 interface ReaderPageProps {
   book: Book;
   onBack: () => void;
+  startPage?: number | null;
+  initialStudyChapterId?: string | null;
 }
 
-export function ReaderPage({ book, onBack }: ReaderPageProps) {
+export function ReaderPage({
+  book,
+  onBack,
+  startPage = null,
+  initialStudyChapterId = null,
+}: ReaderPageProps) {
+  const [studentMode, setStudentMode] = useState(Boolean(initialStudyChapterId));
+
+  useEffect(() => {
+    if (initialStudyChapterId) {
+      setStudentMode(true);
+    }
+  }, [initialStudyChapterId]);
+
   const {
     currentPage,
     totalPages,
@@ -40,13 +56,12 @@ export function ReaderPage({ book, onBack }: ReaderPageProps) {
     toggleFullscreen,
     toggleFocusMode,
     handleBack,
-  } = useReader({ book, onBack });
+  } = useReader({ book, onBack, startPage });
 
   const [sidebar, setSidebar] = useState<'thumbnails' | 'outline' | null>(null);
   const [controlsVisible, setControlsVisible] = useState(true);
   const showControlsTimer = useRef<NodeJS.Timeout | null>(null);
 
-  // Focus mode auto-hide controls on inactivity
   const handleMouseMove = () => {
     if (!focusMode) return;
     setControlsVisible(true);
@@ -76,6 +91,7 @@ export function ReaderPage({ book, onBack }: ReaderPageProps) {
         zoom={zoom}
         showThumbnails={sidebar === 'thumbnails'}
         showOutline={sidebar === 'outline'}
+        studentMode={studentMode}
         focusMode={focusMode}
         isFullscreen={isFullscreen}
         doublePage={doublePage}
@@ -88,6 +104,7 @@ export function ReaderPage({ book, onBack }: ReaderPageProps) {
           setSidebar((prev) => (prev === 'thumbnails' ? null : 'thumbnails'))
         }
         onToggleOutline={() => setSidebar((prev) => (prev === 'outline' ? null : 'outline'))}
+        onToggleStudentMode={() => setStudentMode((prev) => !prev)}
         onToggleFocusMode={toggleFocusMode}
         onToggleFullscreen={toggleFullscreen}
         onToggleDoublePage={toggleDoublePage}
@@ -119,6 +136,18 @@ export function ReaderPage({ book, onBack }: ReaderPageProps) {
           onDocumentReady={onDocumentReady}
           onBack={handleBack}
         />
+
+        {studentMode && (
+          <StudentMode
+            book={book}
+            pdf={pdfDoc}
+            totalPages={totalPages}
+            currentPage={currentPage}
+            initialChapterId={initialStudyChapterId}
+            onClose={() => setStudentMode(false)}
+            onGoToPage={goToPage}
+          />
+        )}
       </div>
 
       <ReaderFooter

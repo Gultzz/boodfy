@@ -1,5 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Sidebar, Eye, Maximize, Minimize, BookOpen, ListTree } from 'lucide-react';
+import {
+  ArrowLeft,
+  Sidebar,
+  Eye,
+  Maximize,
+  Minimize,
+  BookOpen,
+  ListTree,
+  GraduationCap,
+} from 'lucide-react';
 import { ReaderZoomControls } from './ReaderZoomControls';
 import type { FitMode } from '@/types';
 
@@ -11,6 +20,7 @@ interface ReaderHeaderProps {
   zoom: number;
   showThumbnails: boolean;
   showOutline: boolean;
+  studentMode: boolean;
   focusMode: boolean;
   isFullscreen: boolean;
   doublePage: boolean;
@@ -21,6 +31,7 @@ interface ReaderHeaderProps {
   onResetZoom: () => void;
   onToggleThumbnails: () => void;
   onToggleOutline: () => void;
+  onToggleStudentMode: () => void;
   onToggleFocusMode: () => void;
   onToggleFullscreen: () => void;
   onToggleDoublePage: () => void;
@@ -34,6 +45,7 @@ export function ReaderHeader({
   zoom,
   showThumbnails,
   showOutline,
+  studentMode,
   focusMode,
   isFullscreen,
   doublePage,
@@ -44,6 +56,7 @@ export function ReaderHeader({
   onResetZoom,
   onToggleThumbnails,
   onToggleOutline,
+  onToggleStudentMode,
   onToggleFocusMode,
   onToggleFullscreen,
   onToggleDoublePage,
@@ -124,6 +137,17 @@ export function ReaderHeader({
           aria-pressed={showOutline}
         >
           <ListTree size={18} />
+        </button>
+
+        <button
+          className={`btn btn-ghost ${studentMode ? 'active' : ''}`}
+          onClick={onToggleStudentMode}
+          title="Abrir Modo Estudante ao lado do PDF"
+          aria-pressed={studentMode}
+          style={{ gap: '6px', padding: '0 10px', height: '32px', fontSize: '12.5px' }}
+        >
+          <GraduationCap size={17} />
+          <span>Modo Estudante</span>
         </button>
 
         <button

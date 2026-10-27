@@ -1,8 +1,19 @@
 import { useState, useEffect } from 'react';
-import { ArrowLeft, Folder, HardDrive, Sun, Moon, Monitor } from 'lucide-react';
+import {
+  ArrowLeft,
+  Folder,
+  HardDrive,
+  Sun,
+  Moon,
+  Monitor,
+  Sparkles,
+  WifiOff,
+  Settings2,
+} from 'lucide-react';
 import { storage } from '@/services/storage';
 import { useThemeStore } from '@/stores/useThemeStore';
 import { useAppStore } from '@/stores/useAppStore';
+import { AiConfigModal } from '@/components/Study/AiConfigModal';
 import type { AppSettings, FitMode } from '@/types';
 import './SettingsPage.css';
 
@@ -20,9 +31,17 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
     theme: 'system',
     defaultFitMode: 'height',
     watchFolder: null,
+    ai: {
+      enabled: false,
+      baseUrl: 'https://generativelanguage.googleapis.com/v1beta/openai',
+      model: 'gemini-2.0-flash',
+      provider: 'gemini',
+      verified: false,
+    },
   });
   const [dataPath, setDataPath] = useState<string>('');
   const [version, setVersion] = useState<string>('');
+  const [showAiConfig, setShowAiConfig] = useState(false);
 
   useEffect(() => {
     storage.getSettings().then(setSettings);
@@ -99,6 +118,41 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
             </div>
           </section>
 
+          {/* Modo Estudante e IA */}
+          <section className="settings-section card">
+            <h3>Modo Estudante e Inteligência Artificial</h3>
+            <p className="settings-desc">
+              Configure se os quizzes dos capítulos serão gerados com Inteligência Artificial
+              (perguntas de contexto e compreensão) ou no Modo Offline (Sem IA).
+            </p>
+            <div className="folder-setting">
+              <div className="folder-path truncate">
+                {settings.ai.enabled ? (
+                  <>
+                    <Sparkles size={18} />
+                    <span>
+                      <strong>Modo Com IA Ativo:</strong> {settings.ai.model} (
+                      {settings.ai.baseUrl})
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <WifiOff size={18} />
+                    <span>
+                      <strong>Modo Offline (Sem IA) Ativo:</strong> Perguntas geradas localmente
+                    </span>
+                  </>
+                )}
+              </div>
+              <div className="folder-actions">
+                <button className="btn btn-primary" onClick={() => setShowAiConfig(true)}>
+                  <Settings2 size={16} />
+                  Configurar IA / Modo de Quiz
+                </button>
+              </div>
+            </div>
+          </section>
+
           {/* Comportamento do Leitor */}
           <section className="settings-section card">
             <h3>Padrão de Exibição do Leitor</h3>
@@ -164,19 +218,25 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
 
           {/* Sobre */}
           <section className="settings-section card">
-            <h3>Sobre o BooklyPDF</h3>
+            <h3>Sobre o Boodfy</h3>
             <div className="about-info">
               <p>
                 <strong>Versão:</strong> {version || '1.0.0'}
               </p>
               <p>
                 <strong>Privacidade:</strong> Sem banco de dados externo, sem conexão com nuvem e
-                sem envio de dados.
+                sem envio de dados (exceto o texto do capítulo quando você optar por usar IA).
               </p>
             </div>
           </section>
         </div>
       </div>
+
+      <AiConfigModal
+        isOpen={showAiConfig}
+        onClose={() => setShowAiConfig(false)}
+        onSaved={(updated) => setSettings(updated)}
+      />
     </div>
   );
 }

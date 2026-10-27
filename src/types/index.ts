@@ -48,10 +48,19 @@ export interface StreakInfo {
   lastReadDate: string | null;
 }
 
+export interface AiSettings {
+  enabled: boolean;
+  provider: string;
+  baseUrl: string;
+  model: string;
+  verified: boolean;
+}
+
 export interface AppSettings {
   theme: 'light' | 'dark' | 'system';
   defaultFitMode: 'height' | 'width' | 'manual';
   watchFolder: string | null;
+  ai: AiSettings;
 }
 
 export type ViewMode = 'grid' | 'list';
@@ -59,4 +68,104 @@ export type FilterMode = 'all' | 'not-started' | 'reading' | 'completed' | 'rece
 export type SortMode = 'title' | 'lastRead' | 'addedAt';
 export type FitMode = 'height' | 'width' | 'manual';
 
-export type Page = 'library' | 'reader' | 'settings' | 'history';
+export type Page = 'library' | 'reader' | 'settings' | 'history' | 'study';
+
+/* ------------------------------------------------------------------ */
+/* Modo Estudante                                                      */
+/* ------------------------------------------------------------------ */
+
+/** Um capítulo/seção do livro, derivado do sumário do próprio PDF */
+export interface Chapter {
+  id: string;
+  title: string;
+  startPage: number;
+  endPage: number;
+  /** Profundidade no sumário: 0 = nível principal */
+  level: number;
+}
+
+export type QuizQuestionKind =
+  | 'cloze'
+  | 'definition'
+  | 'comprehension'
+  | 'cause-effect'
+  | 'context'
+  | 'ai';
+
+export interface QuizQuestion {
+  id: string;
+  kind: QuizQuestionKind;
+  /** Enunciado da pergunta */
+  prompt: string;
+  options: string[];
+  correctIndex: number;
+  /** Página do capítulo de onde o conteúdo foi tirado */
+  sourcePage: number;
+  /** Explicação mostrada após responder */
+  explanation: string;
+}
+
+export interface Quiz {
+  chapterId: string;
+  chapterTitle: string;
+  startPage: number;
+  endPage: number;
+  questions: QuizQuestion[];
+  generator: 'local' | 'ai';
+  generatorVersion: number;
+  generatedAt: string;
+}
+
+export interface QuizAnswer {
+  questionId: string;
+  selectedIndex: number;
+  correct: boolean;
+}
+
+export interface QuizAttempt {
+  id: string;
+  chapterId: string;
+  chapterTitle: string;
+  startedAt: string;
+  finishedAt: string;
+  correctCount: number;
+  total: number;
+  answers: QuizAnswer[];
+}
+
+export interface BookStudyData {
+  bookId: string;
+  bookTitle: string;
+  chapters: Chapter[];
+  /** Identifica a versão atual do sumário para saber quando reconstruir */
+  chaptersSignature: string;
+  quizzes: Record<string, Quiz>;
+  attempts: QuizAttempt[];
+}
+
+export interface StudyData {
+  version: number;
+  books: Record<string, BookStudyData>;
+}
+
+export interface ChapterStats {
+  chapter: Chapter;
+  attempts: number;
+  correct: number;
+  total: number;
+  accuracy: number;
+  lastAccuracy: number;
+  bestAccuracy: number;
+  lastAttemptAt: string;
+}
+
+export interface BookStats {
+  bookId: string;
+  bookTitle: string;
+  attempts: number;
+  correct: number;
+  total: number;
+  accuracy: number;
+  chaptersStudied: number;
+  chapterStats: ChapterStats[];
+}

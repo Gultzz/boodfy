@@ -48,7 +48,7 @@
   },
   "build": {
     "appId": "com.booklypdf.app",
-    "productName": "BooklyPDF",
+    "productName": "Boodfy",
     "directories": {
       "output": "release"
     },
@@ -70,5 +70,6 @@
       ],
       "language": "1046"
     }
-  }
+  },
+  "productName": "Boodfy"
 }
