@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   ArrowLeft,
   Sidebar,
@@ -8,6 +8,8 @@ import {
   BookOpen,
   ListTree,
   GraduationCap,
+  Menu,
+  X,
 } from 'lucide-react';
 import { ReaderZoomControls } from './ReaderZoomControls';
 import type { FitMode } from '@/types';
@@ -62,10 +64,24 @@ export function ReaderHeader({
   onToggleDoublePage,
 }: ReaderHeaderProps) {
   const [inputPage, setInputPage] = useState(String(currentPage));
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setInputPage(String(currentPage));
   }, [currentPage]);
+
+  // Fechar menu ao clicar fora
+  useEffect(() => {
+    if (!isMenuOpen) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setIsMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isMenuOpen]);
 
   const handlePageInputSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -79,6 +95,7 @@ export function ReaderHeader({
 
   return (
     <header className="reader-header">
+      {/* Lado Esquerdo: Voltar e Título */}
       <div className="reader-header-left">
         <button className="btn btn-ghost btn-icon" onClick={onBack} title="Voltar para Biblioteca">
           <ArrowLeft size={18} />
@@ -88,6 +105,7 @@ export function ReaderHeader({
         </span>
       </div>
 
+      {/* Centro Absoluto: Controle de Páginas (sempre no centro exato) */}
       <div className="reader-header-center">
         <form onSubmit={handlePageInputSubmit} className="page-nav-form">
           <input
@@ -102,7 +120,8 @@ export function ReaderHeader({
         </form>
       </div>
 
-      <div className="reader-header-right">
+      {/* Lado Direito: Ações Desktop (telas a partir de 1024px) */}
+      <div className="reader-header-right desktop-actions">
         <ReaderZoomControls
           fitMode={fitMode}
           zoom={zoom}
@@ -165,6 +184,105 @@ export function ReaderHeader({
         >
           {isFullscreen ? <Minimize size={18} /> : <Maximize size={18} />}
         </button>
+      </div>
+
+      {/* Lado Direito Compacto: Menu Hambúrguer (telas menores que 1024px) */}
+      <div className="reader-header-mobile" ref={menuRef}>
+        <button
+          className={`btn btn-ghost btn-icon ${isMenuOpen ? 'active' : ''}`}
+          onClick={() => setIsMenuOpen((prev) => !prev)}
+          title="Opções do Leitor"
+          aria-expanded={isMenuOpen}
+        >
+          {isMenuOpen ? <X size={20} /> : <Menu size={20} />}
+        </button>
+
+        {isMenuOpen && (
+          <div className="reader-mobile-dropdown">
+            <div className="mobile-dropdown-section">
+              <span className="mobile-dropdown-label">Visualização e Zoom</span>
+              <div className="mobile-zoom-wrapper">
+                <ReaderZoomControls
+                  fitMode={fitMode}
+                  zoom={zoom}
+                  onSetFitMode={onSetFitMode}
+                  onSetZoom={onSetZoom}
+                  onResetZoom={onResetZoom}
+                />
+              </div>
+            </div>
+
+            <div className="mobile-dropdown-divider" />
+
+            <div className="mobile-dropdown-actions">
+              <button
+                className={`mobile-menu-item ${doublePage ? 'active' : ''}`}
+                onClick={() => {
+                  onToggleDoublePage();
+                  setIsMenuOpen(false);
+                }}
+              >
+                <BookOpen size={18} />
+                <span>{doublePage ? 'Modo Página Única' : 'Modo Página Dupla'}</span>
+              </button>
+
+              <button
+                className={`mobile-menu-item ${showThumbnails ? 'active' : ''}`}
+                onClick={() => {
+                  onToggleThumbnails();
+                  setIsMenuOpen(false);
+                }}
+              >
+                <Sidebar size={18} />
+                <span>Miniaturas das Páginas</span>
+              </button>
+
+              <button
+                className={`mobile-menu-item ${showOutline ? 'active' : ''}`}
+                onClick={() => {
+                  onToggleOutline();
+                  setIsMenuOpen(false);
+                }}
+              >
+                <ListTree size={18} />
+                <span>Sumário do Livro</span>
+              </button>
+
+              <button
+                className={`mobile-menu-item ${studentMode ? 'active' : ''}`}
+                onClick={() => {
+                  onToggleStudentMode();
+                  setIsMenuOpen(false);
+                }}
+              >
+                <GraduationCap size={18} />
+                <span>Modo Estudante & Quizzes</span>
+              </button>
+
+              <button
+                className={`mobile-menu-item ${focusMode ? 'active' : ''}`}
+                onClick={() => {
+                  onToggleFocusMode();
+                  setIsMenuOpen(false);
+                }}
+              >
+                <Eye size={18} />
+                <span>{focusMode ? 'Sair do Modo Foco' : 'Modo Foco'}</span>
+              </button>
+
+              <button
+                className="mobile-menu-item"
+                onClick={() => {
+                  onToggleFullscreen();
+                  setIsMenuOpen(false);
+                }}
+              >
+                {isFullscreen ? <Minimize size={18} /> : <Maximize size={18} />}
+                <span>{isFullscreen ? 'Sair da Tela Cheia' : 'Tela Cheia'}</span>
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </header>
   );

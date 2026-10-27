@@ -18,7 +18,7 @@
   background-color: var(--bg-secondary);
   border-bottom: 1px solid var(--border-light);
   height: 52px;
-  z-index: 10;
+  z-index: 20;
   gap: 12px;
   transition:
     transform var(--transition-normal),
@@ -31,7 +31,7 @@
   gap: 12px;
   flex: 0 1 auto;
   min-width: 0;
-  max-width: 35%;
+  max-width: 25%;
   z-index: 2;
 }
 
@@ -40,6 +40,7 @@
   font-size: 14px;
 }
 
+/* Centro Absoluto - Sempre no centro superior exato */
 .reader-header-center {
   position: absolute;
   left: 50%;
@@ -48,10 +49,12 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  pointer-events: auto;
   z-index: 1;
 }
 
-.reader-header-right {
+/* Ações Desktop */
+.reader-header-right.desktop-actions {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -59,18 +62,128 @@
   z-index: 2;
 }
 
-@media (max-width: 900px) {
-  .reader-header-center {
-    position: static;
-    left: auto;
-    top: auto;
-    transform: none;
-    flex-shrink: 0;
+/* Menu Mobile / Hamburguer */
+.reader-header-mobile {
+  display: none;
+  position: relative;
+  margin-left: auto;
+  z-index: 2;
+}
+
+/* A partir de 1024px para baixo, exibe o menu hambúrguer para nunca sobrepor o input central */
+@media (max-width: 1024px) {
+  .reader-header-right.desktop-actions {
+    display: none;
+  }
+
+  .reader-header-mobile {
+    display: flex;
+    align-items: center;
   }
 
   .reader-header-left {
+    max-width: 35%;
+  }
+}
+
+@media (max-width: 540px) {
+  .reader-header-left {
     max-width: 25%;
   }
+
+  .page-total {
+    font-size: 11px;
+  }
+}
+
+/* Dropdown do Menu Hambúrguer */
+.reader-mobile-dropdown {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  width: 260px;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  z-index: 50;
+  animation: slideDownFade 0.15s ease-out;
+}
+
+@keyframes slideDownFade {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.mobile-dropdown-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.mobile-dropdown-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  letter-spacing: 0.05em;
+}
+
+.mobile-zoom-wrapper {
+  display: flex;
+  justify-content: center;
+  background-color: var(--bg-secondary);
+  padding: 6px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-light);
+}
+
+.mobile-dropdown-divider {
+  height: 1px;
+  background-color: var(--border-light);
+  margin: 2px 0;
+}
+
+.mobile-dropdown-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.mobile-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color var(--transition-fast), color var(--transition-fast);
+}
+
+.mobile-menu-item:hover {
+  background-color: var(--bg-hover);
+}
+
+.mobile-menu-item.active {
+  background-color: var(--accent-light);
+  color: var(--accent);
 }
 
 .page-nav-form {
@@ -92,8 +205,6 @@
   font-size: 13px;
   color: var(--text-secondary);
 }
-
-/* .reader-header-right defined above */
 
 .zoom-controls {
   display: flex;
