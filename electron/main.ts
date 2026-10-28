@@ -1,8 +1,25 @@
-import { app, BrowserWindow, ipcMain, dialog, shell, protocol, net, safeStorage, Menu } from 'electron';
+import {
+  app,
+  BrowserWindow,
+  ipcMain,
+  dialog,
+  shell,
+  protocol,
+  net,
+  safeStorage,
+  Menu,
+} from 'electron';
 import path from 'path';
 import fs from 'fs';
 import dns from 'dns';
+import { spawn } from 'child_process';
 import { pathToFileURL } from 'url';
+
+const APP_ID = 'com.boodfy.app';
+
+if (process.platform === 'win32') {
+  app.setAppUserModelId(APP_ID);
+}
 
 // Evita atrasos de 10-20s de resolução DNS IPv6 no Windows ao conectar em APIs externas
 try {
@@ -30,16 +47,28 @@ const isDev = !app.isPackaged;
 let mainWindow: BrowserWindow | null = null;
 
 const BOOK_ARG_PREFIX = '--open-book=';
+const RELAUNCH_FLAG = '--boodfy-relaunch';
 
 function extractBookIdFromArgv(argv: string[]): string | null {
   for (const arg of argv) {
-    if (typeof arg === 'string' && arg.startsWith(BOOK_ARG_PREFIX)) {
-      const value = arg
-        .slice(BOOK_ARG_PREFIX.length)
-        .replace(/^["']+|["']+$/g, '')
-        .trim();
-      if (value && /^[\w-]+$/.test(value)) {
-        return value;
+    if (typeof arg === 'string') {
+      if (arg.startsWith(BOOK_ARG_PREFIX)) {
+        const value = arg
+          .slice(BOOK_ARG_PREFIX.length)
+          .replace(/^["']+|["']+$/g, '')
+          .trim();
+        if (value && /^[\w-]+$/.test(value)) {
+          return value;
+        }
+      }
+      if (arg.startsWith('boodfy://book/')) {
+        const value = arg
+          .slice('boodfy://book/'.length)
+          .replace(/[/?#].*$/, '')
+          .trim();
+        if (value && /^[\w-]+$/.test(value)) {
+          return value;
+        }
       }
     }
   }
@@ -57,18 +86,31 @@ function sanitizeShortcutName(title: string): string {
   return (cleaned || 'Livro Boodfy').slice(0, 80);
 }
 
-function getShortcutIconPath(): string {
+function ensureBoodfyAppIcons(): { icoPath: string; pngPath: string } | null {
   try {
-    const icoPath = path.join(getDataPath(), 'boodfy-book.ico');
-    if (fs.existsSync(icoPath)) return icoPath;
+    const dataDir = getDataPath();
+    if (!fs.existsSync(dataDir)) {
+      fs.mkdirSync(dataDir, { recursive: true });
+    }
+    const icoPath = path.join(dataDir, 'boodfy-app.ico');
+    const pngOutPath = path.join(dataDir, 'boodfy-app.png');
+
+    if (fs.existsSync(icoPath) && fs.existsSync(pngOutPath)) {
+      return { icoPath, pngPath: pngOutPath };
+    }
+
     const pngCandidates = [
-      path.join(__dirname, '../public/icon.png'),
       path.join(__dirname, '../dist/icon.png'),
+      path.join(__dirname, '../public/icon.png'),
+      path.join(__dirname, '../dist/logo-square.png'),
+      path.join(__dirname, '../public/logo-square.png'),
       path.join(process.resourcesPath || '', 'public/icon.png'),
     ];
-    const pngPath = pngCandidates.find((p) => fs.existsSync(p));
-    if (pngPath) {
-      const pngBuffer = fs.readFileSync(pngPath);
+    const srcPngPath = pngCandidates.find((p) => fs.existsSync(p));
+    if (srcPngPath) {
+      const pngBuffer = fs.readFileSync(srcPngPath);
+      fs.writeFileSync(pngOutPath, pngBuffer);
+
       const header = Buffer.alloc(22);
       header.writeUInt16LE(0, 0);
       header.writeUInt16LE(1, 2);
@@ -82,17 +124,22 @@ function getShortcutIconPath(): string {
       header.writeUInt32LE(pngBuffer.length, 14);
       header.writeUInt32LE(22, 18);
       fs.writeFileSync(icoPath, Buffer.concat([header, pngBuffer]));
-      return icoPath;
+      return { icoPath, pngPath: pngOutPath };
     }
   } catch {
-    // fallback to execPath
+    // fallback
   }
-  return process.execPath;
+  return null;
+}
+
+function getShortcutIconPath(): string {
+  const icons = ensureBoodfyAppIcons();
+  return icons?.icoPath || process.execPath;
 }
 
 function createBookShortcutIcon(
   bookId: string,
-  pngDataUrl: string
+  pngDataUrl: string,
 ): { icoPath: string; pngPath: string } | null {
   try {
     const shortcutsDir = path.join(getDataPath(), 'shortcuts');
@@ -197,7 +244,11 @@ const CURATED_MODELS: Record<string, AiModelOption[]> = {
     { id: 'gemini-2.5-pro', name: 'Gemini 2.5 Pro', badge: 'Raciocínio Avançado' },
   ],
   groq: [
-    { id: 'llama-3.3-70b-versatile', name: 'Llama 3.3 70B Versatile', badge: 'Recomendado · Rápido' },
+    {
+      id: 'llama-3.3-70b-versatile',
+      name: 'Llama 3.3 70B Versatile',
+      badge: 'Recomendado · Rápido',
+    },
     { id: 'llama-3.1-8b-instant', name: 'Llama 3.1 8B Instant', badge: 'Instantâneo' },
     { id: 'meta-llama/llama-4-scout-17b-16e-instruct', name: 'Llama 4 Scout 17B', badge: 'Novo' },
     { id: 'meta-llama/llama-4-maverick-17b-128e-instruct', name: 'Llama 4 Maverick 17B' },
@@ -213,7 +264,11 @@ const CURATED_MODELS: Record<string, AiModelOption[]> = {
     { id: 'o4-mini', name: 'o4-mini', badge: 'Raciocínio' },
   ],
   openrouter: [
-    { id: 'meta-llama/llama-3.3-70b-instruct:free', name: 'Llama 3.3 70B Instruct', badge: 'Grátis' },
+    {
+      id: 'meta-llama/llama-3.3-70b-instruct:free',
+      name: 'Llama 3.3 70B Instruct',
+      badge: 'Grátis',
+    },
     { id: 'google/gemini-2.0-flash-exp:free', name: 'Gemini 2.0 Flash', badge: 'Grátis' },
     { id: 'deepseek/deepseek-chat-v3-0324:free', name: 'DeepSeek V3', badge: 'Grátis' },
     { id: 'qwen/qwen-2.5-72b-instruct:free', name: 'Qwen 2.5 72B Instruct', badge: 'Grátis' },
@@ -304,7 +359,11 @@ async function fetchGeminiLiveModels(apiKey: string): Promise<AiModelOption[] | 
       if (!m.supportedGenerationMethods.includes('generateContent')) continue;
       const id = m.name.replace(/^models\//, '');
       if (!/^gemini-/i.test(id)) continue;
-      if (/embedding|imagen|veo|aqa|tts|audio|robotics|computer-use|learnlm|vision|thinking-exp/i.test(id)) {
+      if (
+        /embedding|imagen|veo|aqa|tts|audio|robotics|computer-use|learnlm|vision|thinking-exp/i.test(
+          id,
+        )
+      ) {
         continue;
       }
       filtered.push({
@@ -313,9 +372,7 @@ async function fetchGeminiLiveModels(apiKey: string): Promise<AiModelOption[] | 
       });
     }
 
-    return filtered.length > 0
-      ? prioritizeModels(filtered, CURATED_MODELS.gemini ?? [])
-      : null;
+    return filtered.length > 0 ? prioritizeModels(filtered, CURATED_MODELS.gemini ?? []) : null;
   } catch {
     return null;
   } finally {
@@ -387,9 +444,7 @@ async function fetchOpenAiCompatibleModels(
             ),
         )
         .map((id) => ({ id, name: id }));
-      return chatOnly.length > 0
-        ? prioritizeModels(chatOnly, CURATED_MODELS.openai ?? [])
-        : null;
+      return chatOnly.length > 0 ? prioritizeModels(chatOnly, CURATED_MODELS.openai ?? []) : null;
     }
 
     if (provider === 'groq' || /api\.groq\.com/i.test(baseUrl)) {
@@ -397,9 +452,7 @@ async function fetchOpenAiCompatibleModels(
         .map((item) => item.id as string)
         .filter((id) => !/whisper|guard|tts|playai|orpheus|allam/i.test(id))
         .map((id) => ({ id, name: id }));
-      return chatOnly.length > 0
-        ? prioritizeModels(chatOnly, CURATED_MODELS.groq ?? [])
-        : null;
+      return chatOnly.length > 0 ? prioritizeModels(chatOnly, CURATED_MODELS.groq ?? []) : null;
     }
 
     if (provider === 'openrouter' || /openrouter\.ai/i.test(baseUrl)) {
@@ -419,7 +472,11 @@ async function fetchOpenAiCompatibleModels(
         };
         if (isFree) {
           freeModels.push(entry);
-        } else if (/^(google\/gemini|openai\/gpt-4o|anthropic\/claude-3\.5|deepseek\/deepseek|meta-llama\/llama-3\.3)/i.test(id)) {
+        } else if (
+          /^(google\/gemini|openai\/gpt-4o|anthropic\/claude-3\.5|deepseek\/deepseek|meta-llama\/llama-3\.3)/i.test(
+            id,
+          )
+        ) {
           paidModels.push(entry);
         }
       }
@@ -661,13 +718,19 @@ function setupProtocol(): void {
 }
 
 function createWindow(): void {
+  const appIcons = ensureBoodfyAppIcons();
+  const windowIcon =
+    process.platform === 'win32'
+      ? appIcons?.icoPath || path.join(__dirname, '../dist/icon.png')
+      : appIcons?.pngPath || path.join(__dirname, '../dist/icon.png');
+
   mainWindow = new BrowserWindow({
     width: 1200,
     height: 800,
     minWidth: 800,
     minHeight: 600,
     title: 'Boodfy',
-    icon: path.join(__dirname, '../public/logo-square.png'),
+    icon: windowIcon,
     show: false,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
@@ -677,6 +740,24 @@ function createWindow(): void {
       devTools: false,
     },
   });
+
+  if (process.platform === 'win32') {
+    const relaunchCommand = app.isPackaged
+      ? `"${process.execPath}"`
+      : `"${process.execPath}" "${app.getAppPath()}"`;
+    mainWindow.setAppDetails({
+      appId: APP_ID,
+      appIconPath: appIcons?.icoPath || process.execPath,
+      appIconIndex: 0,
+      relaunchCommand,
+      relaunchDisplayName: 'Boodfy',
+    });
+    if (appIcons?.icoPath) {
+      mainWindow.setIcon(appIcons.icoPath);
+    }
+  } else if (process.platform === 'linux' && appIcons?.pngPath) {
+    mainWindow.setIcon(appIcons.pngPath);
+  }
 
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
     if (/^https?:\/\//i.test(url)) {
@@ -817,7 +898,8 @@ function setupIpcHandlers(): void {
     };
     const provider = typeof data.provider === 'string' ? data.provider : 'gemini';
     const baseUrl = normalizeBaseUrl(typeof data.baseUrl === 'string' ? data.baseUrl : '');
-    const inlineKey = typeof data.apiKey === 'string' && data.apiKey.trim() ? data.apiKey.trim() : null;
+    const inlineKey =
+      typeof data.apiKey === 'string' && data.apiKey.trim() ? data.apiKey.trim() : null;
     const effectiveKey = inlineKey || readAiKey();
 
     const curated = CURATED_MODELS[provider] ?? CURATED_MODELS.gemini ?? [];
@@ -935,7 +1017,8 @@ function setupIpcHandlers(): void {
       if (err instanceof Error && err.name === 'AbortError') {
         return {
           ok: false,
-          error: 'Tempo limite esgotado (12s). Verifique sua conexão ou escolha um modelo mais rápido.',
+          error:
+            'Tempo limite esgotado (12s). Verifique sua conexão ou escolha um modelo mais rápido.',
         };
       }
       return {
@@ -1250,7 +1333,8 @@ function setupIpcHandlers(): void {
       const bookId = typeof data.bookId === 'string' ? data.bookId.trim() : '';
       const rawTitle = typeof data.title === 'string' ? data.title.trim() : 'Livro';
       const iconDataUrl =
-        typeof data.iconDataUrl === 'string' && data.iconDataUrl.startsWith('data:image/png;base64,')
+        typeof data.iconDataUrl === 'string' &&
+        data.iconDataUrl.startsWith('data:image/png;base64,')
           ? data.iconDataUrl
           : null;
 
@@ -1305,7 +1389,8 @@ function setupIpcHandlers(): void {
           ? `"${process.execPath}" --open-book=${bookId}`
           : `"${process.execPath}" "${app.getAppPath()}" --open-book=${bookId}`;
 
-        let iconPath = path.join(__dirname, '../public/icon.png');
+        const appIcons = ensureBoodfyAppIcons();
+        let iconPath = appIcons?.pngPath || path.join(__dirname, '../dist/icon.png');
         if (customIcons?.pngPath && fs.existsSync(customIcons.pngPath)) {
           iconPath = customIcons.pngPath;
         }
@@ -1315,7 +1400,7 @@ function setupIpcHandlers(): void {
           'Version=1.0',
           'Type=Application',
           `Name=${safeTitle}`,
-          `Comment=Abrir "${rawTitle}" no Boodfy`,
+          `Comment=Abrir "${rawTitle}" no Boodfy na última página lida`,
           `Exec=${execCmd}`,
           `Icon=${iconPath}`,
           'Terminal=false',
@@ -1330,10 +1415,15 @@ function setupIpcHandlers(): void {
 
       if (process.platform === 'darwin') {
         const shortcutPath = path.join(desktopDir, `${safeTitle}.command`);
-        const cmd = app.isPackaged
-          ? `open -a "${process.execPath}" --args --open-book=${bookId}`
+        const appBundlePath = path.resolve(process.execPath, '../../..');
+        const fallbackCmd = app.isPackaged
+          ? `open -a "${appBundlePath}" --args --open-book=${bookId}`
           : `"${process.execPath}" "${app.getAppPath()}" --open-book=${bookId} &`;
-        const content = `#!/bin/bash\n${cmd}\n`;
+        const content = [
+          '#!/bin/bash',
+          `open "boodfy://book/${bookId}" 2>/dev/null || ${fallbackCmd}`,
+          '',
+        ].join('\n');
         fs.writeFileSync(shortcutPath, content, { encoding: 'utf-8', mode: 0o755 });
         fs.chmodSync(shortcutPath, 0o755);
         return { ok: true, shortcutPath };
@@ -1351,8 +1441,48 @@ function setupIpcHandlers(): void {
 
 const gotSingleInstanceLock = app.requestSingleInstanceLock();
 
+if (app.isPackaged) {
+  app.setAsDefaultProtocolClient('boodfy');
+} else if (process.argv.length >= 2) {
+  app.setAsDefaultProtocolClient('boodfy', process.execPath, [path.resolve(process.argv[1])]);
+}
+
+let relaunchedCleanly = false;
+if (
+  gotSingleInstanceLock &&
+  pendingLaunchBookId &&
+  !process.argv.includes(RELAUNCH_FLAG) &&
+  (process.platform === 'win32' || process.platform === 'linux')
+) {
+  // Quando o Boodfy está fechado e é aberto por um atalho de livro (.lnk no Windows ou .desktop no Linux),
+  // o SO associa o processo inicial ao atalho (STARTF_TITLEISLINKNAME / GIO_LAUNCHED_DESKTOP_FILE), exibindo a capa do livro na Barra de Tarefas.
+  // Relançamos o processo principal desacoplado do atalho para que a Barra de Tarefas / Dock exiba sempre o ícone oficial do Boodfy.
+  try {
+    app.releaseSingleInstanceLock();
+    const relaunchArgs = app.isPackaged
+      ? [RELAUNCH_FLAG, `${BOOK_ARG_PREFIX}${pendingLaunchBookId}`]
+      : [app.getAppPath(), RELAUNCH_FLAG, `${BOOK_ARG_PREFIX}${pendingLaunchBookId}`];
+    const cleanEnv = { ...process.env };
+    delete cleanEnv.GIO_LAUNCHED_DESKTOP_FILE;
+    delete cleanEnv.GIO_LAUNCHED_DESKTOP_FILE_PID;
+
+    const child = spawn(process.execPath, relaunchArgs, {
+      detached: true,
+      stdio: 'ignore',
+      cwd: path.dirname(process.execPath),
+      env: cleanEnv,
+    });
+    child.unref();
+    relaunchedCleanly = true;
+  } catch {
+    app.requestSingleInstanceLock();
+  }
+}
+
 if (!gotSingleInstanceLock) {
   app.quit();
+} else if (relaunchedCleanly) {
+  app.exit(0);
 } else {
   app.on('second-instance', (_event, commandLine) => {
     const bookId = extractBookIdFromArgv(commandLine);
@@ -1366,6 +1496,22 @@ if (!gotSingleInstanceLock) {
       }
     } else if (bookId) {
       pendingLaunchBookId = bookId;
+    }
+  });
+
+  app.on('open-url', (event, url) => {
+    event.preventDefault();
+    const match = url.match(/boodfy:\/\/book\/([\w-]+)/i);
+    const bookId = match ? match[1] : null;
+    if (bookId) {
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        if (mainWindow.isMinimized()) mainWindow.restore();
+        if (!mainWindow.isVisible()) mainWindow.show();
+        mainWindow.focus();
+        mainWindow.webContents.send('app:open-book', bookId);
+      } else {
+        pendingLaunchBookId = bookId;
+      }
     }
   });
 
