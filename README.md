@@ -1,176 +1,154 @@
 <div align="center">
 
-# ⚡ Boodfy
-### O Leitor de PDF Definitivo para Leitura Imersiva e Aprendizado Ativo
+# 📖 Boodfy
 
-**Transforme seus PDFs em conhecimento real.** Uma experiência desktop fluida, sem distrações, 100% offline e potencializada por Inteligência Artificial para elevar sua retenção de leitura ao próximo nível.
+### O leitor e ambiente de estudos definitivo para quem leva livros e PDFs a sério.
 
-[![Windows Support](https://img.shields.io/badge/Plataforma-Windows-0078D6?style=for-the-badge&logo=windows&logoColor=white)](#)
-[![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)](#)
-[![Electron](https://img.shields.io/badge/Electron-47848F?style=for-the-badge&logo=electron&logoColor=white)](#)
-[![React](https://img.shields.io/badge/React_18-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)](#)
-[![Privacy First](https://img.shields.io/badge/Privacidade-100%25_Local-brightgreen?style=for-the-badge)](#)
+**100% Offline · Sem Rastreamento · Feito para Alta Performance**
+
+[![Release](https://img.shields.io/github/v/release/SEU-USUARIO/boodfy?color=6366f1&style=for-the-badge)](https://github.com/SEU-USUARIO/boodfy/releases)
+[![Platform](https://img.shields.io/badge/Plataformas-Windows%20%7C%20macOS%20%7C%20Linux-0f172a?style=for-the-badge)](#download)
+[![License](https://img.shields.io/badge/Licen%C3%A7a-MIT-10b981?style=for-the-badge)](LICENSE)
+[![Offline First](https://img.shields.io/badge/Privacidade-100%25%20Offline-blueviolet?style=for-the-badge)](#privacidade)
+
+<p align="center">
+  O Boodfy não é apenas um visualizador de PDFs comum. Ele transforma qualquer livro digital em uma estação imersiva de aprendizado — combinando leitura focada, continuidade instantânea, ferramentas avançadas de estudo e integração opcional com IA local.
+</p>
+
+[Download Grátis](#download) • [Funcionalidades](#-funcionalidades) • [Modo Estudante](#-modo-estudante-completo) • [Diferenciais](#-por-que-o-boodfy)
 
 </div>
 
 ---
 
-## 🌟 Por que o Boodfy é Diferente?
+## ⚡ Por que o Boodfy é diferente?
 
-A maioria dos leitores de PDF foi feita para assinar formulários ou visualizar relatórios de escritório — não para **quem lê para aprender**.
+A maioria dos leitores de PDF foi feita para assinar contratos ou visualizar documentos corporativos genéricos — eles são lentos, pesados, esquecem onde você parou e não ajudam você a reter o conhecimento.
 
-O **Boodfy** une o aconchego de um leitor digital de ponta com um **Centro de Aprendizado Ativo** impulsionado por IA. Pare de esquecer o que leu na semana passada: leia com conforto absoluto, responda a quizzes gerados a partir dos seus próprios capítulos e construa uma rotina diária inquebrável.
+O **Boodfy foi desenhado do zero para leitores e estudantes vorazes**:
 
-> 🔒 **100% Privado e Seguro:** Sem nuvem obrigatória, sem contas, sem telemetria de leitura. Seus livros e seus dados pertencem a você e ficam armazenados localmente no seu computador.
-
----
-
-## ✨ Recursos Incríveis
-
-### 🧠 1. Modo Estudante & Quizzes Inteligentes (Local ou IA)
-Aprender de verdade exige testar o que você leu. Com o inovador **Modo Estudante**, o Boodfy divide seu PDF automaticamente em capítulos e gera testes de fixação em segundos:
-- **Quizzes Automatizados:** Questões de fixação estruturadas com base nos capítulos do seu livro.
-- **Turbinado por Inteligência Artificial (Opcional):** Conecte modelos de IA (como Gemini ou servidores locais compatíveis) para criar questões profundas de análise crítica, causa/efeito e interpretação conceitual.
-- **Feedback Imediato & Explicações Detalhadas:** Descubra não apenas a resposta correta, mas a fundamentação e a página exata de onde o conteúdo foi extraído.
-- **Painel de Desempenho e Estatísticas de Estudo:** Acompanhe sua taxa de acerto por capítulo, histórico de tentativas e veja instantaneamente os tópicos que merecem uma releitura!
+- 🔒 **Zero Telemetria ou Contas Obrigatórias**: Seus livros, anotações e hábitos de estudo permanecem no seu computador.
+- ⚡ **Desempenho Extremo**: Abre livros volumosos de mais de 2.000 páginas e centenas de capítulos sem travar.
+- 🎯 **Continuidade Sem Fricção**: Toda vez que você abre um livro, ele está exatamente na página e parágrafo em que você parou.
 
 ---
 
-### 📖 2. Experiência de Leitura Imersiva
-Sua leitura merece foco total, sem barras de ferramentas poluídas ou lag na rolagem:
-- **Modo Página Dupla & Página Única:** Alterne com um clique entre a visão tradicional de página única ou sinta-se folheando um livro físico com a exibição de página dupla lado a lado.
-- **Modo Foco Total:** Oculte toda a interface para uma leitura pura, silenciosa e sem distrações.
-- **Ajuste Inteligente de Tela:** Modos dinâmicos de *Ajustar à Altura*, *Ajustar à Largura* e zoom suave de precisão.
-- **Sumário Interativo & Miniaturas:** Navegue instantaneamente pela estrutura original do sumário do livro ou pela barra retrátil de miniaturas visuais.
-- **Retomada Instantânea:** O Boodfy lembra exatamente a última página e o modo onde você parou em cada livro. Fechou o app? Ao reabrir, continue no mesmo milissegundo.
+## ✨ Funcionalidades em Destaque
+
+### 🖼️ Atalhos de Livros na Área de Trabalho (Exclusivo)
+
+> _Abra seu livro favorito com 2 cliques na sua Área de Trabalho, como se fosse um aplicativo próprio._
+
+- Clique com o botão direito em qualquer livro da biblioteca e selecione **"Criar atalho na Área de Trabalho"**.
+- O Boodfy cria um arquivo `.ico` nativo em alta resolução (256×256) exibindo a **capa real do livro** em proporção 3D com um selo discreto do Boodfy no canto.
+- Ao clicar no atalho, o Boodfy inicializa e **abre diretamente na última página lida daquele livro específico**.
 
 ---
 
-### 🔥 3. Ofensiva de Leitura Diária (Streaks)
-Construir um hábito de leitura nunca foi tão viciante:
-- **Gamificação Integrada:** Acompanhe sua sequência de dias lidos com o indicador de **Ofensiva (Streak)** na barra principal.
-- **Estatísticas de Consistência:** Visualize sua sequência atual, seu recorde histórico e se a sua meta do dia já foi alcançada.
-- **Card "Continuar Leitura":** Na tela inicial, o livro que você está lendo no momento fica sempre em destaque para você retomar em apenas 1 clique.
+### 📑 Motor de Leitura de Nova Geração
+
+- **Navegação Profunda por Sumário**: Extração recursiva de índices complexos, garantindo acesso imediato a todos os capítulos mesmo em livros técnicos com centenas de seções.
+- **Miniaturas em Tempo Real**: Barra lateral com visualização rápida das páginas para navegação visual fluida.
+- **Modos de Exibição & Zoom Dinâmico**: Página única, página dupla, ajuste à largura, altura e modo tela cheia sem distrações (_F11_).
+- **Busca Rápida de Texto**: Localize palavras-chave e citações com realce visual instantâneo.
+- **Temas Adaptativos**: Modo Escuro profundo (_Deep Dark_), Modo Claro suave e sincronização com as cores do seu sistema operacional.
 
 ---
 
-### 📚 4. Biblioteca Moderna, Organizada e Inteligente
-Diga adeus a pastas desorganizadas no Windows:
-- **Drag & Drop Instantâneo:** Basta arrastar arquivos ou pastas de PDFs direto para a janela do aplicativo.
-- **Pastas Monitoradas:** Conecte sua pasta de livros e o Boodfy sincroniza novas adições automaticamente com varredura recursiva e sem duplicatas.
-- **Tags e Coleções Customizadas:** Categorize seus livros por assunto, disciplina, faculdade, ficção ou prioridade e filtre instantaneamente.
-- **Capas Automáticas de Alta Resolução:** Geração automática da capa a partir da primeira página do PDF.
-- **Visualização em Grade ou Lista:** Escolha o layout que melhor combina com seu gosto visual.
-- **Filtros Ágeis e Ordenação:** Filtre por *Não iniciados*, *Em andamento*, *Concluídos*, *Recentes* e ordene por título, data de adição ou última leitura.
-- **Auto-cura de Arquivos:** Moveu o PDF de pasta no Windows? O Boodfy detecta e permite relocalizar o caminho sem perder seu progresso nem seus estudos!
+### 🎓 Modo Estudante Completo
+
+Transforme a leitura passiva em **retenção ativa** de conteúdo:
+
+| Recurso                      | Descrição                                                                                                                                                 |
+| :--------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 🗂️ **Flashcards Integrados** | Crie cartões de repetição espaçada vinculados ao livro que está lendo. Revise conceitos-chave com sistema de virada dinâmica e acompanhamento de domínio. |
+| 📝 **Smart Notes**           | Anote percepções, resumos de capítulos e citações importantes diretamente na barra lateral, sem precisar alternar para outro app de notas.                |
+| ❓ **Quizzes de Fixação**    | Teste sua compreensão gerando perguntas e respostas para avaliar se o conteúdo foi realmente assimilado.                                                  |
+| ⏱️ **Pomodoro Timer**        | Temporizador de foco e intervalos integrado na tela de leitura, permitindo manter sessões de estudo disciplinadas sem sair do livro.                      |
 
 ---
 
-### 🕒 5. Histórico e Métricas Detalhadas
-- Histórico transparente de todas as suas sessões de leitura.
-- Registro da data/hora, página de início e página final alcançada em cada sessão.
-- Limpeza simples de histórico quando desejar recomeçar com privacidade total.
+### 🧠 Inteligência Artificial (Opcional & Privada)
+
+Quer um assistente para resumir parágrafos difíceis, explicar conceitos ou criar flashcards automaticamente?
+
+- Suporte a modelos **100% Locais via Ollama** (Llama 3, DeepSeek, Qwen) — sem enviar nenhum dado para a internet.
+- Suporte a provedores de nuvem rápidos como **Google Gemini**, **Groq** e **OpenRouter**.
+- Suas chaves de API são armazenadas com **criptografia nativa do sistema operacional** (`safeStorage`).
 
 ---
 
-### 🎨 6. Design Moderno com Temas Escuro e Claro
-- Interface limpa, minimalista e desenhada nos mínimos detalhes para não cansar a vista.
-- Suporte a **Tema Claro**, **Tema Escuro** e sincronização automática com o tema do seu Windows.
+### 📊 Hábitos e Métricas de Leitura
+
+- **Ofensivas Diárias (Streaks)**: Acompanhe sua consistência diária de leitura.
+- **Histórico & Progresso**: Saiba exatamente quanto tempo você dedicou a cada livro, páginas lidas por sessão e porcentagem concluída.
+- **Organização por Tags & Categorias**: Filtre sua biblioteca por assunto, prioridade, status de leitura ou tags personalizadas.
+- **Drag & Drop e Monitor de Pastas**: Basta arrastar PDFs para dentro do app ou selecionar uma pasta do seu computador para indexação automática.
 
 ---
 
-## ⌨️ Atalhos de Teclado Úteis
+## 🚀 Como Baixar e Usar
 
-Navegue pelo seu livro com a velocidade do pensamento:
+### Download Direto
 
-| Tecla / Atalho | Ação |
-| :--- | :--- |
-| <kbd>→</kbd> / <kbd>Espaço</kbd> | Próxima página (ou avanço duplo no modo página dupla) |
-| <kbd>←</kbd> | Página anterior |
-| <kbd>Home</kbd> | Pular para a primeira página |
-| <kbd>End</kbd> | Pular para a última página |
-| <kbd>Esc</kbd> | Sair do Modo Foco ou fechar painéis |
-| <kbd>F11</kbd> | Alternar Tela Cheia nativa |
-| <kbd>Enter</kbd> no campo de página | Pular diretamente para qualquer página digitada |
+Baixe a versão mais recente pronta para uso na aba de [Releases](https://github.com/SEU-USUARIO/boodfy/releases):
+
+- **Windows**: `boodfy-setup.exe` (Instalador com suporte a atalhos e protocolo nativo)
+- **Linux**: `boodfy.AppImage` / `.deb`
+- **macOS**: `boodfy.dmg`
 
 ---
 
-## 🛠️ Tecnologias de Ponta
+## 🛠️ Tecnologias Utilizadas
 
-Construído sobre uma stack moderna, robusta e orientada a altíssima performance:
+O Boodfy foi construído aliando estabilidade de sistemas com uma experiência de interface moderna:
 
-- **[Electron](https://www.electronjs.org/)**: Shell nativo seguro para Windows com sandbox ativado e IPC isolado via preload.
-- **[React 18](https://react.dev/) + [TypeScript](https://www.typescriptlang.org/)**: Interface reativa, código modular e tipagem estrita de ponta a ponta.
-- **[Vite](https://vitejs.dev/)**: Inicialização e compilação ultra-rápidas.
-- **[PDF.js](https://mozilla.github.io/pdf.js/) & [react-pdf](https://github.com/wojtekmaj/react-pdf)**: Engine de renderização de PDF profissional com baixo consumo de memória.
-- **[Zustand](https://github.com/pmndrs/zustand)**: Gerenciamento de estado global veloz e sem re-renderizações desnecessárias.
-- **[Lucide React](https://lucide.dev/)**: Ícones vetoriais modernos e leves.
-- **Escrita Atômica Segura**: Persistência de dados locais com mecanismo anti-corrupção em `.tmp` para máxima segurança dos seus dados e notas mesmo em quedas de energia.
+- **Core & Runtime**: [Electron](https://www.electronjs.org/) + [Node.js](https://nodejs.org/)
+- **Frontend**: [React 19](https://react.dev/) + [TypeScript](https://www.typescriptlang.org/) + [Vite](https://vitejs.dev/)
+- **Motor de Renderização PDF**: [PDF.js](https://mozilla.github.io/pdf.js/)
+- **Gerenciamento de Estado**: [Zustand](https://github.com/pmndrs/zustand)
+- **Ícones & Estilização**: [Lucide Icons](https://lucide.dev/) + CSS Modular com aceleração por hardware
 
 ---
 
-## 🚀 Como Executar e Compilar
+## 💻 Desenvolvimento Local
 
-### Pré-requisitos
-- [Node.js](https://nodejs.org/) (versão 18 ou superior recomendada)
-- Gerenciador de pacotes `npm`
-
-### Instalação
-
-Clone o repositório ou acesse a pasta do projeto:
+Se você deseja contribuir ou rodar o projeto a partir do código-fonte:
 
 ```bash
-git clone https://github.com/seu-usuario/boodfy.git
+# 1. Clone o repositório
+git clone https://github.com/SEU-USUARIO/boodfy.git
 cd boodfy
-```
 
-Instale as dependências:
-
-```bash
+# 2. Instale as dependências
 npm install
-```
 
-### Desenvolvimento
-
-Inicie o aplicativo em modo de desenvolvimento com hot-reload ativo:
-
-```bash
+# 3. Inicie em modo de desenvolvimento
 npm run dev
-```
 
-### Verificação e Qualidade de Código
-
-Garanta que todo o código está íntegro e padronizado:
-
-```bash
-# Verificação estrita de tipagem TypeScript
-npm run typecheck
-
-# Análise estática com ESLint
-npm run lint
-
-# Formatação automática de código com Prettier
-npm run format
-
-# Execução completa de testes de qualidade
+# 4. Validar tipos e padrões de código
 npm run check-all
-```
 
-### Geração de Executável / Instalador Windows (.exe)
-
-Gere a versão final de produção com instalador NSIS completo em português:
-
-```bash
+# 5. Compilar o instalador de produção
 npm run build
 ```
-O instalador pronto para distribuição será gerado na pasta `/release`.
+
+---
+
+## 🛡️ Privacidade em Primeiro Lugar
+
+O Boodfy foi criado com o princípio de soberania de dados:
+
+1. **Nenhum livro seu é enviado para servidores externos.**
+2. Todas as capas, anotações, histórico de leitura e atalhos residem unicamente no diretório de dados local do seu usuário.
+3. Se você optar por usar IA local (Ollama), até mesmo a inteligência artificial roda na GPU/CPU do seu próprio computador.
 
 ---
 
 ## 📄 Licença
 
-Distribuído sob a licença **MIT**. Consulte o arquivo `LICENSE` para mais informações.
+Distribuído sob a licença **MIT**. Veja [`LICENSE`](LICENSE) para mais detalhes.
 
 <div align="center">
-  <sub>Criado com carinho para quem ama ler e quer aprender mais a cada página. ✨</sub>
+  <sub>Desenvolvido com carinho para quem ama aprender através dos livros.</sub>
 </div>
