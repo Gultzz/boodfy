@@ -45,8 +45,13 @@ export function LibraryPage({ onOpenBook }: LibraryPageProps) {
   const [bookToRemove, setBookToRemove] = useState<Book | null>(null);
   const [unavailableBook, setUnavailableBook] = useState<Book | null>(null);
   const [bookToManageTags, setBookToManageTags] = useState<Book | null>(null);
+  const [shortcutFeedback, setShortcutFeedback] = useState<{
+    ok: boolean;
+    message: string;
+  } | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const dragCounterRef = useRef(0);
+  const feedbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const appOpenBook = useAppStore((s) => s.openBook);
   const handleOpenBook = onOpenBook || appOpenBook;
@@ -144,6 +149,37 @@ export function LibraryPage({ onOpenBook }: LibraryPageProps) {
     setUnavailableBook(null);
   };
 
+  const handleCreateDesktopShortcut = async (book: Book) => {
+    if (feedbackTimerRef.current) {
+      clearTimeout(feedbackTimerRef.current);
+    }
+    try {
+      const result = await window.electronAPI.createDesktopShortcut({
+        bookId: book.id,
+        title: book.title,
+      });
+      if (result.ok) {
+        setShortcutFeedback({
+          ok: true,
+          message: `Atalho de “${book.title}” criado na Área de Trabalho!`,
+        });
+      } else {
+        setShortcutFeedback({
+          ok: false,
+          message: result.error || 'Não foi possível criar o atalho na Área de Trabalho.',
+        });
+      }
+    } catch {
+      setShortcutFeedback({
+        ok: false,
+        message: 'Erro ao criar o atalho na Área de Trabalho.',
+      });
+    }
+    feedbackTimerRef.current = setTimeout(() => {
+      setShortcutFeedback(null);
+    }, 3500);
+  };
+
   if (loading) {
     return (
       <div className="library-loading">
@@ -189,9 +225,20 @@ export function LibraryPage({ onOpenBook }: LibraryPageProps) {
           onClose={() => setContextMenu(null)}
           onRename={(book) => setBookToRename(book)}
           onManageTags={(book) => setBookToManageTags(book)}
+          onCreateShortcut={handleCreateDesktopShortcut}
           onRemove={(book) => setBookToRemove(book)}
           onRelocate={handleRelocateBook}
         />
+      )}
+
+      {shortcutFeedback && (
+        <div
+          className={`library-shortcut-toast ${shortcutFeedback.ok ? 'is-ok' : 'is-err'}`}
+          role="status"
+          aria-live="polite"
+        >
+          {shortcutFeedback.message}
+        </div>
       )}
 
       {bookToRename && (

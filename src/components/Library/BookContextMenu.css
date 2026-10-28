@@ -10,7 +10,7 @@
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-lg);
-  min-width: 200px;
+  min-width: 240px;
   padding: 4px;
   animation: fadeIn var(--transition-fast);
   z-index: 1001;
@@ -26,6 +26,7 @@
   font-size: 13px;
   color: var(--text-primary);
   text-align: left;
+  white-space: nowrap;
   transition: background-color var(--transition-fast);
   background: none;
   border: none;

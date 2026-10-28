@@ -80,6 +80,25 @@ const api = {
   // Shell
   openPath: (dirPath: string): Promise<void> => ipcRenderer.invoke('shell:openPath', dirPath),
   openExternal: (url: string): Promise<void> => ipcRenderer.invoke('shell:openExternal', url),
+
+  // Atalho de livro na Área de Trabalho e abertura direta pelo ID
+  consumeLaunchBook: (): Promise<string | null> => ipcRenderer.invoke('app:consumeLaunchBook'),
+  onOpenBookFromShortcut: (callback: (bookId: string) => void): (() => void) => {
+    const listener = (_event: Electron.IpcRendererEvent, bookId: unknown) => {
+      if (typeof bookId === 'string' && bookId.trim()) {
+        callback(bookId.trim());
+      }
+    };
+    ipcRenderer.on('app:open-book', listener);
+    return () => {
+      ipcRenderer.removeListener('app:open-book', listener);
+    };
+  },
+  createDesktopShortcut: (payload: {
+    bookId: string;
+    title: string;
+  }): Promise<{ ok: boolean; shortcutPath?: string; error?: string }> =>
+    ipcRenderer.invoke('shortcut:createDesktop', payload),
 };
 
 contextBridge.exposeInMainWorld('electronAPI', api);

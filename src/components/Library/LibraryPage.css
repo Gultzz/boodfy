@@ -217,3 +217,28 @@
   overflow-y: auto;
 }
 
+.library-shortcut-toast {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 1200;
+  padding: 10px 16px;
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  font-weight: 500;
+  box-shadow: var(--shadow-lg);
+  border: 1px solid var(--border);
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+  animation: fadeIn var(--transition-fast);
+}
+
+.library-shortcut-toast.is-ok {
+  border-color: var(--success);
+}
+
+.library-shortcut-toast.is-err {
+  border-color: var(--error);
+  color: var(--error);
+}
+

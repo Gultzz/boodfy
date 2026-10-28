@@ -42,10 +42,23 @@ export const useAppStore = create<AppState>((set) => ({
   },
 
   openBookById: async (bookId: string) => {
-    const lib = await storage.getLibrary();
+    const [lib, progress] = await Promise.all([storage.getLibrary(), storage.getProgress()]);
     const found = lib.books.find((b) => b.id === bookId);
     if (found) {
-      set({ currentBook: found, currentPage: 'reader', readerEntry: EMPTY_ENTRY });
+      const savedProgress = progress[bookId];
+      const savedPage = savedProgress?.currentPage ?? found.currentPage ?? 1;
+      const updatedBook: Book = {
+        ...found,
+        currentPage: savedPage,
+        totalPages: savedProgress?.totalPages || found.totalPages,
+        status: savedProgress?.status || found.status,
+        lastReadAt: savedProgress?.lastReadAt || found.lastReadAt,
+      };
+      set({
+        currentBook: updatedBook,
+        currentPage: 'reader',
+        readerEntry: { page: savedPage, chapterId: null },
+      });
     }
   },
 

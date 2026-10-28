@@ -13,11 +13,33 @@ export function App() {
   const currentPage = useAppStore((s) => s.currentPage);
   const currentBook = useAppStore((s) => s.currentBook);
   const readerEntry = useAppStore((s) => s.readerEntry);
+  const openBookById = useAppStore((s) => s.openBookById);
   const backToLibrary = useAppStore((s) => s.backToLibrary);
 
   useEffect(() => {
     initializeTheme();
   }, [initializeTheme]);
+
+  useEffect(() => {
+    window.electronAPI
+      .consumeLaunchBook()
+      .then((bookId) => {
+        if (bookId) {
+          void openBookById(bookId);
+        }
+      })
+      .catch(() => {
+        // ignore
+      });
+
+    const unsubscribe = window.electronAPI.onOpenBookFromShortcut((bookId) => {
+      void openBookById(bookId);
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, [openBookById]);
 
   return (
     <div className="app-root" style={{ width: '100%', height: '100%' }}>
@@ -26,6 +48,7 @@ export function App() {
       {currentPage === 'reader' && currentBook && (
         <ErrorBoundary onReset={backToLibrary}>
           <ReaderPage
+            key={currentBook.id}
             book={currentBook}
             onBack={backToLibrary}
             startPage={readerEntry.page}

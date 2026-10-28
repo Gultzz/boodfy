@@ -29,6 +29,67 @@ const isDev = !app.isPackaged;
 
 let mainWindow: BrowserWindow | null = null;
 
+const BOOK_ARG_PREFIX = '--open-book=';
+
+function extractBookIdFromArgv(argv: string[]): string | null {
+  for (const arg of argv) {
+    if (typeof arg === 'string' && arg.startsWith(BOOK_ARG_PREFIX)) {
+      const value = arg
+        .slice(BOOK_ARG_PREFIX.length)
+        .replace(/^["']+|["']+$/g, '')
+        .trim();
+      if (value && /^[\w-]+$/.test(value)) {
+        return value;
+      }
+    }
+  }
+  return null;
+}
+
+let pendingLaunchBookId: string | null = extractBookIdFromArgv(process.argv);
+
+function sanitizeShortcutName(title: string): string {
+  const cleaned = title
+    .replace(/[<>:"/\\|?*\p{Cc}]+/gu, ' ')
+    .replace(/\s+/g, ' ')
+    .replace(/[. ]+$/g, '')
+    .trim();
+  return (cleaned || 'Livro Boodfy').slice(0, 80);
+}
+
+function getShortcutIconPath(): string {
+  try {
+    const icoPath = path.join(getDataPath(), 'boodfy-book.ico');
+    if (fs.existsSync(icoPath)) return icoPath;
+    const pngCandidates = [
+      path.join(__dirname, '../public/icon.png'),
+      path.join(__dirname, '../dist/icon.png'),
+      path.join(process.resourcesPath || '', 'public/icon.png'),
+    ];
+    const pngPath = pngCandidates.find((p) => fs.existsSync(p));
+    if (pngPath) {
+      const pngBuffer = fs.readFileSync(pngPath);
+      const header = Buffer.alloc(22);
+      header.writeUInt16LE(0, 0);
+      header.writeUInt16LE(1, 2);
+      header.writeUInt16LE(1, 4);
+      header.writeUInt8(0, 6);
+      header.writeUInt8(0, 7);
+      header.writeUInt8(0, 8);
+      header.writeUInt8(0, 9);
+      header.writeUInt16LE(1, 10);
+      header.writeUInt16LE(32, 12);
+      header.writeUInt32LE(pngBuffer.length, 14);
+      header.writeUInt32LE(22, 18);
+      fs.writeFileSync(icoPath, Buffer.concat([header, pngBuffer]));
+      return icoPath;
+    }
+  } catch {
+    // fallback to execPath
+  }
+  return process.execPath;
+}
+
 function getDataPath(): string {
   return app.getPath('userData');
 }
@@ -1121,14 +1182,126 @@ function setupIpcHandlers(): void {
     }
     return null;
   });
+
+  // Atalho de livro na Área de Trabalho e abertura direta pelo ID
+  ipcMain.handle('app:consumeLaunchBook', () => {
+    const id = pendingLaunchBookId;
+    pendingLaunchBookId = null;
+    return id;
+  });
+
+  ipcMain.handle('shortcut:createDesktop', (_event, payload: unknown) => {
+    try {
+      const data = (payload ?? {}) as { bookId?: unknown; title?: unknown };
+      const bookId = typeof data.bookId === 'string' ? data.bookId.trim() : '';
+      const rawTitle = typeof data.title === 'string' ? data.title.trim() : 'Livro';
+
+      if (!bookId || !/^[\w-]+$/.test(bookId)) {
+        return { ok: false, error: 'Identificador do livro inválido.' };
+      }
+
+      const desktopDir = app.getPath('desktop');
+      const safeTitle = sanitizeShortcutName(rawTitle);
+
+      if (process.platform === 'win32') {
+        const shortcutPath = path.join(desktopDir, `${safeTitle}.lnk`);
+        const target = process.execPath;
+        const args = app.isPackaged
+          ? `--open-book=${bookId}`
+          : `"${app.getAppPath()}" --open-book=${bookId}`;
+        const icon = app.isPackaged ? process.execPath : getShortcutIconPath();
+
+        const created = shell.writeShortcutLink(shortcutPath, {
+          target,
+          args,
+          cwd: path.dirname(process.execPath),
+          description: `Abrir "${rawTitle}" no Boodfy na última página lida`,
+          icon,
+          iconIndex: 0,
+        });
+
+        if (!created) {
+          return {
+            ok: false,
+            error: 'O Windows não permitiu criar o atalho na Área de Trabalho.',
+          };
+        }
+
+        return { ok: true, shortcutPath };
+      }
+
+      if (process.platform === 'linux') {
+        const shortcutPath = path.join(desktopDir, `${safeTitle}.desktop`);
+        const execCmd = app.isPackaged
+          ? `"${process.execPath}" --open-book=${bookId}`
+          : `"${process.execPath}" "${app.getAppPath()}" --open-book=${bookId}`;
+        const iconPath = path.join(__dirname, '../public/icon.png');
+        const content = [
+          '[Desktop Entry]',
+          'Version=1.0',
+          'Type=Application',
+          `Name=${safeTitle}`,
+          `Comment=Abrir "${rawTitle}" no Boodfy`,
+          `Exec=${execCmd}`,
+          `Icon=${iconPath}`,
+          'Terminal=false',
+          'Categories=Education;Office;Viewer;',
+          '',
+        ].join('\n');
+
+        fs.writeFileSync(shortcutPath, content, { encoding: 'utf-8', mode: 0o755 });
+        fs.chmodSync(shortcutPath, 0o755);
+        return { ok: true, shortcutPath };
+      }
+
+      if (process.platform === 'darwin') {
+        const shortcutPath = path.join(desktopDir, `${safeTitle}.command`);
+        const cmd = app.isPackaged
+          ? `open -a "${process.execPath}" --args --open-book=${bookId}`
+          : `"${process.execPath}" "${app.getAppPath()}" --open-book=${bookId} &`;
+        const content = `#!/bin/bash\n${cmd}\n`;
+        fs.writeFileSync(shortcutPath, content, { encoding: 'utf-8', mode: 0o755 });
+        fs.chmodSync(shortcutPath, 0o755);
+        return { ok: true, shortcutPath };
+      }
+
+      return { ok: false, error: 'Sistema operacional não suportado para criação de atalho.' };
+    } catch (err) {
+      return {
+        ok: false,
+        error: err instanceof Error ? err.message : 'Erro ao criar atalho na Área de Trabalho.',
+      };
+    }
+  });
 }
 
-app.whenReady().then(() => {
-  ensureDataDir();
-  setupProtocol();
-  setupIpcHandlers();
-  createWindow();
-});
+const gotSingleInstanceLock = app.requestSingleInstanceLock();
+
+if (!gotSingleInstanceLock) {
+  app.quit();
+} else {
+  app.on('second-instance', (_event, commandLine) => {
+    const bookId = extractBookIdFromArgv(commandLine);
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) mainWindow.restore();
+      if (!mainWindow.isVisible()) mainWindow.show();
+      mainWindow.focus();
+      if (bookId) {
+        pendingLaunchBookId = null;
+        mainWindow.webContents.send('app:open-book', bookId);
+      }
+    } else if (bookId) {
+      pendingLaunchBookId = bookId;
+    }
+  });
+
+  app.whenReady().then(() => {
+    ensureDataDir();
+    setupProtocol();
+    setupIpcHandlers();
+    createWindow();
+  });
+}
 
 app.on('window-all-closed', () => {
   app.quit();

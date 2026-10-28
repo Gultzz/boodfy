@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { Pencil, MapPin, Copy, Trash2, Tag } from 'lucide-react';
+import { Pencil, MapPin, Copy, Trash2, Tag, MonitorUp } from 'lucide-react';
 import { libraryService } from '@/services/library-service';
 import type { Book } from '@/types';
 import './BookContextMenu.css';
@@ -11,6 +11,7 @@ interface BookContextMenuProps {
   onClose: () => void;
   onRename: (book: Book) => void;
   onManageTags: (book: Book) => void;
+  onCreateShortcut: (book: Book) => void;
   onRemove: (book: Book) => void;
   onRelocate: (bookId: string) => void;
 }
@@ -22,6 +23,7 @@ export function BookContextMenu({
   onClose,
   onRename,
   onManageTags,
+  onCreateShortcut,
   onRemove,
   onRelocate,
 }: BookContextMenuProps) {
@@ -47,8 +49,8 @@ export function BookContextMenu({
   // Adjust position to stay within viewport
   const style: React.CSSProperties = {
     position: 'fixed',
-    left: Math.min(x, window.innerWidth - 220),
-    top: Math.min(y, window.innerHeight - 200),
+    left: Math.min(x, window.innerWidth - 260),
+    top: Math.min(y, window.innerHeight - 250),
     zIndex: 1001,
   };
 
@@ -97,6 +99,19 @@ export function BookContextMenu({
         >
           <Tag size={14} />
           Gerenciar tags
+        </button>
+
+        <button
+          type="button"
+          className="context-menu-item"
+          onClick={(e) => {
+            e.stopPropagation();
+            onClose();
+            onCreateShortcut(book);
+          }}
+        >
+          <MonitorUp size={14} />
+          Criar atalho na Área de Trabalho
         </button>
 
         <button
