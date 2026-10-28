@@ -90,6 +90,45 @@ function getShortcutIconPath(): string {
   return process.execPath;
 }
 
+function createBookShortcutIcon(
+  bookId: string,
+  pngDataUrl: string
+): { icoPath: string; pngPath: string } | null {
+  try {
+    const shortcutsDir = path.join(getDataPath(), 'shortcuts');
+    if (!fs.existsSync(shortcutsDir)) {
+      fs.mkdirSync(shortcutsDir, { recursive: true });
+    }
+
+    const base64Data = pngDataUrl.replace(/^data:image\/png;base64,/, '');
+    const pngBuffer = Buffer.from(base64Data, 'base64');
+    if (pngBuffer.length === 0) return null;
+
+    const pngPath = path.join(shortcutsDir, `${bookId}.png`);
+    fs.writeFileSync(pngPath, pngBuffer);
+
+    const icoPath = path.join(shortcutsDir, `${bookId}.ico`);
+    const header = Buffer.alloc(22);
+    header.writeUInt16LE(0, 0);
+    header.writeUInt16LE(1, 2);
+    header.writeUInt16LE(1, 4);
+    header.writeUInt8(0, 6);
+    header.writeUInt8(0, 7);
+    header.writeUInt8(0, 8);
+    header.writeUInt8(0, 9);
+    header.writeUInt16LE(1, 10);
+    header.writeUInt16LE(32, 12);
+    header.writeUInt32LE(pngBuffer.length, 14);
+    header.writeUInt32LE(22, 18);
+    fs.writeFileSync(icoPath, Buffer.concat([header, pngBuffer]));
+
+    return { icoPath, pngPath };
+  } catch (err) {
+    console.error('Erro ao gerar ícone customizado de atalho:', err);
+    return null;
+  }
+}
+
 function getDataPath(): string {
   return app.getPath('userData');
 }
@@ -1161,6 +1200,17 @@ function setupIpcHandlers(): void {
         }
       }
     }
+    try {
+      const shortcutsDir = path.join(getDataPath(), 'shortcuts');
+      for (const ext of ['ico', 'png']) {
+        const iconFile = path.join(shortcutsDir, `${bookId}.${ext}`);
+        if (fs.existsSync(iconFile)) {
+          fs.unlinkSync(iconFile);
+        }
+      }
+    } catch {
+      // ignore
+    }
     return true;
   });
 
@@ -1192,9 +1242,17 @@ function setupIpcHandlers(): void {
 
   ipcMain.handle('shortcut:createDesktop', (_event, payload: unknown) => {
     try {
-      const data = (payload ?? {}) as { bookId?: unknown; title?: unknown };
+      const data = (payload ?? {}) as {
+        bookId?: unknown;
+        title?: unknown;
+        iconDataUrl?: unknown;
+      };
       const bookId = typeof data.bookId === 'string' ? data.bookId.trim() : '';
       const rawTitle = typeof data.title === 'string' ? data.title.trim() : 'Livro';
+      const iconDataUrl =
+        typeof data.iconDataUrl === 'string' && data.iconDataUrl.startsWith('data:image/png;base64,')
+          ? data.iconDataUrl
+          : null;
 
       if (!bookId || !/^[\w-]+$/.test(bookId)) {
         return { ok: false, error: 'Identificador do livro inválido.' };
@@ -1203,15 +1261,26 @@ function setupIpcHandlers(): void {
       const desktopDir = app.getPath('desktop');
       const safeTitle = sanitizeShortcutName(rawTitle);
 
+      let customIcons: { icoPath: string; pngPath: string } | null = null;
+      if (iconDataUrl) {
+        customIcons = createBookShortcutIcon(bookId, iconDataUrl);
+      }
+
       if (process.platform === 'win32') {
         const shortcutPath = path.join(desktopDir, `${safeTitle}.lnk`);
         const target = process.execPath;
         const args = app.isPackaged
           ? `--open-book=${bookId}`
           : `"${app.getAppPath()}" --open-book=${bookId}`;
-        const icon = app.isPackaged ? process.execPath : getShortcutIconPath();
 
-        const created = shell.writeShortcutLink(shortcutPath, {
+        let icon = app.isPackaged ? process.execPath : getShortcutIconPath();
+        if (customIcons?.icoPath && fs.existsSync(customIcons.icoPath)) {
+          icon = customIcons.icoPath;
+        }
+
+        const operation = fs.existsSync(shortcutPath) ? 'replace' : 'create';
+
+        const created = shell.writeShortcutLink(shortcutPath, operation, {
           target,
           args,
           cwd: path.dirname(process.execPath),
@@ -1235,7 +1304,12 @@ function setupIpcHandlers(): void {
         const execCmd = app.isPackaged
           ? `"${process.execPath}" --open-book=${bookId}`
           : `"${process.execPath}" "${app.getAppPath()}" --open-book=${bookId}`;
-        const iconPath = path.join(__dirname, '../public/icon.png');
+
+        let iconPath = path.join(__dirname, '../public/icon.png');
+        if (customIcons?.pngPath && fs.existsSync(customIcons.pngPath)) {
+          iconPath = customIcons.pngPath;
+        }
+
         const content = [
           '[Desktop Entry]',
           'Version=1.0',

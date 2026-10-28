@@ -6,6 +6,7 @@ import {
 } from '@/stores/useLibraryStore';
 import { useAppStore } from '@/stores/useAppStore';
 import { libraryService } from '@/services/library-service';
+import { generateBookShortcutIcon } from '@/services/shortcut-icon';
 import { LibraryHeader } from './LibraryHeader';
 import { ContinueReadingCard } from './ContinueReadingCard';
 import { LibraryToolbar } from './LibraryToolbar';
@@ -154,9 +155,11 @@ export function LibraryPage({ onOpenBook }: LibraryPageProps) {
       clearTimeout(feedbackTimerRef.current);
     }
     try {
+      const iconDataUrl = await generateBookShortcutIcon(book);
       const result = await window.electronAPI.createDesktopShortcut({
         bookId: book.id,
         title: book.title,
+        iconDataUrl,
       });
       if (result.ok) {
         setShortcutFeedback({

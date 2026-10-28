@@ -97,6 +97,7 @@ const api = {
   createDesktopShortcut: (payload: {
     bookId: string;
     title: string;
+    iconDataUrl?: string | null;
   }): Promise<{ ok: boolean; shortcutPath?: string; error?: string }> =>
     ipcRenderer.invoke('shortcut:createDesktop', payload),
 };
