@@ -91,7 +91,7 @@ Quer um assistente para resumir parágrafos difíceis, explicar conceitos ou cri
 
 ### Download Direto
 
-Baixe a versão mais recente pronta para uso na aba de [Releases](https://github.com/SEU-USUARIO/boodfy/releases):
+Baixe a versão mais recente pronta para uso na aba de [Releases](https://github.com/Gultzz/boodfy/releases):
 
 - **Windows**: `boodfy-setup.exe` (Instalador com suporte a atalhos e protocolo nativo)
 - **Linux**: `boodfy.AppImage` / `.deb`
@@ -152,3 +152,4 @@ Distribuído sob a licença **MIT**. Veja [`LICENSE`](LICENSE) para mais detalhe
 <div align="center">
   <sub>Desenvolvido com carinho para quem ama aprender através dos livros.</sub>
 </div>
+
