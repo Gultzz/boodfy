@@ -117,7 +117,7 @@ Se você deseja contribuir ou rodar o projeto a partir do código-fonte:
 
 ```bash
 # 1. Clone o repositório
-git clone https://github.com/SEU-USUARIO/boodfy.git
+git clone https://github.com/Gultzz/boodfy.git
 cd boodfy
 
 # 2. Instale as dependências
