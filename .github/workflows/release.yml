@@ -47,4 +47,5 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           release: true
+          draft: false
           max_attempts: 1
