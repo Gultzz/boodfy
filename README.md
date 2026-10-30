@@ -6,7 +6,7 @@
 
 **100% Offline · Sem Rastreamento · Feito para Alta Performance**
 
-[![Release](https://img.shields.io/github/v/release/SEU-USUARIO/boodfy?color=6366f1&style=for-the-badge)](https://github.com/SEU-USUARIO/boodfy/releases)
+[![Release](https://img.shields.io/github/v/release/Gultzz/boodfy?color=6366f1&style=for-the-badge)](https://github.com/Gultzz/boodfy/releases)
 [![Platform](https://img.shields.io/badge/Plataformas-Windows%20%7C%20macOS%20%7C%20Linux-0f172a?style=for-the-badge)](#download)
 [![License](https://img.shields.io/badge/Licen%C3%A7a-MIT-10b981?style=for-the-badge)](LICENSE)
 [![Offline First](https://img.shields.io/badge/Privacidade-100%25%20Offline-blueviolet?style=for-the-badge)](#privacidade)
