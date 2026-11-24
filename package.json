@@ -1,6 +1,6 @@
 {
   "name": "boodfy",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "description": "Leitor pessoal de livros PDF com Modo Estudante e IA",
   "main": "dist-electron/main.js",
   "author": {
