@@ -1,10 +1,56 @@
-import type { Chapter, QuizQuestion } from '@/types';
+import type { AppLanguage, Chapter, QuizQuestion } from '@/types';
 import type { PageText } from './pdf-text';
 
 /** Muda quando o algoritmo muda: quizzes antigos são regerados */
-export const QUIZ_GENERATOR_VERSION = 3;
+export const QUIZ_GENERATOR_VERSION = 4;
 export const QUESTIONS_PER_QUIZ = 6;
 export const MIN_QUIZ_QUESTIONS = 3;
+
+interface LocalQuizPromptTemplates {
+  definition: (subject: string) => string;
+  causeEffect: (premise: string) => string;
+  context: (term: string, page: number) => string;
+  comprehension: (title: string) => string;
+}
+
+const LOCAL_PROMPT_TEMPLATES: Record<AppLanguage, LocalQuizPromptTemplates> = {
+  pt: {
+    definition: (subject) => `De acordo com o texto do capítulo, o que define ou caracteriza “${subject}”?`,
+    causeEffect: (premise) => `Segundo o texto, qual é a justificativa ou consequência apontada para: “${premise}”?`,
+    context: (term, page) => `Ao abordar o conceito de “${term}” (pág. ${page}), qual afirmação expressa o que o capítulo destaca?`,
+    comprehension: (title) => `Com base nas explicações do capítulo “${title}”, qual das seguintes afirmações está correta segundo o texto?`,
+  },
+  en: {
+    definition: (subject) => `According to the chapter text, what defines or characterizes “${subject}”?`,
+    causeEffect: (premise) => `According to the text, what is the reason or consequence stated for: “${premise}”?`,
+    context: (term, page) => `When discussing “${term}” (p. ${page}), which statement reflects what the chapter highlights?`,
+    comprehension: (title) => `Based on chapter “${title}”, which of the following statements is accurate according to the text?`,
+  },
+  es: {
+    definition: (subject) => `Según el texto del capítulo, ¿qué define o caracteriza a “${subject}”?`,
+    causeEffect: (premise) => `Según el texto, ¿cuál es la causa o consecuencia señalada para: “${premise}”?`,
+    context: (term, page) => `Al abordar “${term}” (pág. ${page}), ¿qué afirmación expresa lo que destaca el capítulo?`,
+    comprehension: (title) => `Con base en el capítulo “${title}”, ¿cuál de las siguientes afirmaciones es correcta según el texto?`,
+  },
+  zh: {
+    definition: (subject) => `根据本章内容，“${subject}”的定义或特征是什么？`,
+    causeEffect: (premise) => `根据文本，关于“${premise}”的原因或结果是什么？`,
+    context: (term, page) => `在讨论“${term}”（第 ${page} 页）时，哪项陈述符合本章重点？`,
+    comprehension: (title) => `根据“${title}”一章的说明，以下哪项陈述是正确的？`,
+  },
+  hi: {
+    definition: (subject) => `अध्याय के पाठ के अनुसार, “${subject}” को क्या परिभाषित या चित्रित करता है?`,
+    causeEffect: (premise) => `पाठ के अनुसार, “${premise}” का कारण या परिणाम क्या बताया गया है?`,
+    context: (term, page) => `“${term}” (पृष्ठ ${page}) पर चर्चा करते समय, कौन सा कथन अध्याय के मुख्य बिंदु को व्यक्त करता है?`,
+    comprehension: (title) => `अध्याय “${title}” की व्याख्या के आधार पर, निम्नलिखित में से कौन सा कथन सही है?`,
+  },
+  fr: {
+    definition: (subject) => `Selon le texte du chapitre, qu’est-ce qui définit ou caractérise « ${subject} » ?`,
+    causeEffect: (premise) => `Selon le texte, quelle est la cause ou la conséquence indiquée pour : « ${premise} » ?`,
+    context: (term, page) => `À propos de « ${term} » (p. ${page}), quelle affirmation reflète ce que le chapitre met en avant ?`,
+    comprehension: (title) => `D’après le chapitre « ${title} », laquelle des affirmations suivantes est exacte selon le texte ?`,
+  },
+};
 
 export class QuizGenerationError extends Error {
   constructor(
@@ -493,6 +539,7 @@ function buildDefinitionQuestions(
   sentences: SentenceCandidate[],
   random: () => number,
   limit: number,
+  tpl: LocalQuizPromptTemplates,
 ): Omit<QuizQuestion, 'id'>[] {
   const definitions = collectDefinitions(sentences);
   if (definitions.length < 3) return [];
@@ -528,7 +575,7 @@ function buildDefinitionQuestions(
       withOptions(
         {
           kind: 'definition',
-          prompt: `De acordo com o texto do capítulo, o que define ou caracteriza “${definition.subject}”?`,
+          prompt: tpl.definition(definition.subject),
           sourcePage: definition.page,
           explanation: definition.sentence,
         },
@@ -548,6 +595,7 @@ function buildCauseEffectQuestions(
   sentences: SentenceCandidate[],
   random: () => number,
   limit: number,
+  tpl: LocalQuizPromptTemplates,
 ): Omit<QuizQuestion, 'id'>[] {
   const candidates: { premise: string; consequence: string; sentence: string; page: number }[] = [];
 
@@ -594,7 +642,7 @@ function buildCauseEffectQuestions(
       withOptions(
         {
           kind: 'cause-effect',
-          prompt: `Segundo o texto, qual é a justificativa ou consequência apontada para: “${candidate.premise}”?`,
+          prompt: tpl.causeEffect(candidate.premise),
           sourcePage: candidate.page,
           explanation: candidate.sentence,
         },
@@ -614,6 +662,7 @@ function buildContextQuestions(
   terms: Term[],
   random: () => number,
   limit: number,
+  tpl: LocalQuizPromptTemplates,
 ): Omit<QuizQuestion, 'id'>[] {
   const topTerms = terms.slice(0, 15).filter((t) => t.text.length >= 4 && !isLikelyVerb(t.text));
   const questions: Omit<QuizQuestion, 'id'>[] = [];
@@ -652,7 +701,7 @@ function buildContextQuestions(
       withOptions(
         {
           kind: 'context',
-          prompt: `Ao abordar o conceito de “${term.text}” (pág. ${target.page}), qual afirmação expressa o que o capítulo destaca?`,
+          prompt: tpl.context(term.text, target.page),
           sourcePage: target.page,
           explanation: target.sentence,
         },
@@ -672,6 +721,7 @@ function buildComprehensionQuestions(
   chapter: Chapter,
   random: () => number,
   limit: number,
+  tpl: LocalQuizPromptTemplates,
 ): Omit<QuizQuestion, 'id'>[] {
   const usable = sentences.filter(
     (s) => s.sentence.length >= 60 && s.sentence.length <= 190 && !s.sentence.includes('?'),
@@ -708,7 +758,7 @@ function buildComprehensionQuestions(
       withOptions(
         {
           kind: 'comprehension',
-          prompt: `Com base nas explicações do capítulo “${chapter.title}”, qual das seguintes afirmações está correta segundo o texto?`,
+          prompt: tpl.comprehension(chapter.title),
           sourcePage: correct.page,
           explanation: correct.sentence,
         },
@@ -723,7 +773,12 @@ function buildComprehensionQuestions(
   return questions;
 }
 
-export function generateLocalQuiz(pages: PageText[], chapter: Chapter, seedSuffix = ''): QuizQuestion[] {
+export function generateLocalQuiz(
+  pages: PageText[],
+  chapter: Chapter,
+  seedSuffix = '',
+  language: AppLanguage = 'pt',
+): QuizQuestion[] {
   const usablePages = pages.filter((page) => page.text.trim().length > 0);
   const totalChars = usablePages.reduce((sum, page) => sum + page.text.length, 0);
 
@@ -747,10 +802,11 @@ export function generateLocalQuiz(pages: PageText[], chapter: Chapter, seedSuffi
     );
   }
 
-  const comprehensionQuestions = buildComprehensionQuestions(sentences, chapter, random, 2);
-  const causeEffectQuestions = buildCauseEffectQuestions(sentences, random, 2);
-  const definitionQuestions = buildDefinitionQuestions(sentences, random, 2);
-  const contextQuestions = buildContextQuestions(sentences, terms, random, 2);
+  const tpl = LOCAL_PROMPT_TEMPLATES[language] ?? LOCAL_PROMPT_TEMPLATES.pt;
+  const comprehensionQuestions = buildComprehensionQuestions(sentences, chapter, random, 2, tpl);
+  const causeEffectQuestions = buildCauseEffectQuestions(sentences, random, 2, tpl);
+  const definitionQuestions = buildDefinitionQuestions(sentences, random, 2, tpl);
+  const contextQuestions = buildContextQuestions(sentences, terms, random, 2, tpl);
 
   const richPool = [
     ...comprehensionQuestions,

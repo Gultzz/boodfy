@@ -1,6 +1,6 @@
 .book-list-item {
   display: grid;
-  grid-template-columns: 40px 1fr 120px 80px 100px 100px 32px;
+  grid-template-columns: 40px 1fr 120px 80px 100px 92px 64px;
   align-items: center;
   gap: 12px;
   padding: 8px 16px;
@@ -44,6 +44,11 @@
   font-weight: 500;
 }
 
+.book-list-author {
+  font-size: 11.5px;
+  color: var(--text-secondary);
+}
+
 .book-list-progress {
   display: flex;
   align-items: center;
@@ -64,6 +69,13 @@
   text-align: right;
 }
 
+.book-list-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+}
+
 .book-list-more-btn {
   width: 28px;
   height: 28px;
@@ -80,6 +92,7 @@
 }
 
 .book-list-item:hover .book-list-more-btn,
+.book-list-item:focus-within .book-list-more-btn,
 .book-list-more-btn:focus-visible {
   opacity: 1;
 }
@@ -88,7 +101,6 @@
   background-color: var(--bg-hover);
   color: var(--text-primary);
 }
-
 
 .book-list-title-cell {
   display: flex;

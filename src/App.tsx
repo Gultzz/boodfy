@@ -7,9 +7,16 @@ import { StudyPage } from '@/components/Study/StudyPage';
 import { ErrorBoundary } from '@/components/common/ErrorBoundary';
 import { useAppStore } from '@/stores/useAppStore';
 import { useThemeStore } from '@/stores/useThemeStore';
+import { useI18nStore } from '@/stores/useI18nStore';
+import { useReaderSettingsStore } from '@/stores/useReaderSettingsStore';
+import { useAnnotationsStore } from '@/stores/useAnnotationsStore';
 
 export function App() {
   const initializeTheme = useThemeStore((s) => s.initializeTheme);
+  const initializeLanguage = useI18nStore((s) => s.initializeLanguage);
+  const initializeReaderSettings = useReaderSettingsStore((s) => s.initialize);
+  const loadAnnotations = useAnnotationsStore((s) => s.load);
+
   const currentPage = useAppStore((s) => s.currentPage);
   const currentBook = useAppStore((s) => s.currentBook);
   const readerEntry = useAppStore((s) => s.readerEntry);
@@ -17,8 +24,11 @@ export function App() {
   const backToLibrary = useAppStore((s) => s.backToLibrary);
 
   useEffect(() => {
-    initializeTheme();
-  }, [initializeTheme]);
+    void initializeTheme();
+    void initializeLanguage();
+    void initializeReaderSettings();
+    void loadAnnotations();
+  }, [initializeTheme, initializeLanguage, initializeReaderSettings, loadAnnotations]);
 
   useEffect(() => {
     window.electronAPI
@@ -53,6 +63,7 @@ export function App() {
             onBack={backToLibrary}
             startPage={readerEntry.page}
             initialStudyChapterId={readerEntry.chapterId}
+            initialPanel={readerEntry.initialPanel}
           />
         </ErrorBoundary>
       )}

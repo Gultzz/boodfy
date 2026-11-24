@@ -6,6 +6,7 @@ const WEBP_QUALITY = 0.8;
 export interface PdfCoverResult {
   coverDataUrl: string;
   totalPages: number;
+  author?: string;
 }
 
 export async function generatePdfCover(filePath: string): Promise<PdfCoverResult | null> {
@@ -18,6 +19,17 @@ export async function generatePdfCover(filePath: string): Promise<PdfCoverResult
     const buffer = await window.electronAPI.readPdf(filePath);
     const data = new Uint8Array(buffer.slice(0));
     pdf = await pdfjs.getDocument({ data }).promise;
+
+    let author: string | undefined;
+    try {
+      const metadata = await pdf.getMetadata();
+      const info = metadata?.info as { Author?: unknown } | undefined;
+      if (typeof info?.Author === 'string' && info.Author.trim().length > 0) {
+        author = info.Author.trim().slice(0, 120);
+      }
+    } catch {
+      // metadata is optional
+    }
 
     const page = await pdf.getPage(1);
     const unscaled = page.getViewport({ scale: 1 });
@@ -48,6 +60,7 @@ export async function generatePdfCover(filePath: string): Promise<PdfCoverResult
     return {
       coverDataUrl,
       totalPages: pdf.numPages,
+      author,
     };
   } catch (err) {
     console.error('Erro ao gerar capa do PDF:', err);

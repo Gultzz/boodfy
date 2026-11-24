@@ -4,21 +4,32 @@ const FILES = {
   history: 'reading-history.json',
   settings: 'settings.json',
   study: 'study-progress.json',
+  annotations: 'annotations.json',
 } as const;
 
 import type {
-  Library,
-  ReadingProgress,
-  ReadingHistory,
+  AnnotationsData,
   AppSettings,
+  Library,
+  ReadingHistory,
+  ReadingProgress,
+  ReaderTypographySettings,
   StudyData,
 } from '@/types';
 
-const DEFAULT_LIBRARY: Library = { books: [], watchFolder: null };
+export const DEFAULT_READER_SETTINGS: ReaderTypographySettings = {
+  defaultViewMode: 'pdf',
+  fontSize: 18,
+  lineSpacing: 'comfortable',
+  readingTheme: 'original',
+};
+
+const DEFAULT_LIBRARY: Library = { books: [], watchFolder: null, tags: [], tagColors: {} };
 const DEFAULT_PROGRESS: ReadingProgress = {};
 const DEFAULT_HISTORY: ReadingHistory = { entries: [] };
 const DEFAULT_SETTINGS: AppSettings = {
   theme: 'system',
+  language: 'pt',
   defaultFitMode: 'height',
   watchFolder: null,
   ai: {
@@ -28,8 +39,10 @@ const DEFAULT_SETTINGS: AppSettings = {
     provider: 'gemini',
     verified: false,
   },
+  reader: DEFAULT_READER_SETTINGS,
 };
 const DEFAULT_STUDY: StudyData = { version: 1, books: {} };
+const DEFAULT_ANNOTATIONS: AnnotationsData = { version: 1, books: {} };
 
 async function read<T>(file: string, defaultValue: T): Promise<T> {
   try {
@@ -47,7 +60,13 @@ async function write(file: string, data: unknown): Promise<void> {
 
 export const storage = {
   async getLibrary(): Promise<Library> {
-    return read(FILES.library, DEFAULT_LIBRARY);
+    const data = await read<Partial<Library>>(FILES.library, DEFAULT_LIBRARY);
+    return {
+      books: Array.isArray(data.books) ? data.books : [],
+      watchFolder: data.watchFolder ?? null,
+      tags: Array.isArray(data.tags) ? data.tags : [],
+      tagColors: data.tagColors && typeof data.tagColors === 'object' ? data.tagColors : {},
+    };
   },
 
   async saveLibrary(library: Library): Promise<void> {
@@ -80,10 +99,16 @@ export const storage = {
     ) {
       mergedAi.model = 'gemini-2.5-flash';
     }
+    const mergedReader: ReaderTypographySettings = {
+      ...DEFAULT_READER_SETTINGS,
+      ...(data.reader ?? {}),
+    };
     return {
       ...DEFAULT_SETTINGS,
       ...data,
+      language: data.language ?? 'pt',
       ai: mergedAi,
+      reader: mergedReader,
     };
   },
 
@@ -99,5 +124,15 @@ export const storage = {
 
   async saveStudy(study: StudyData): Promise<void> {
     await write(FILES.study, study);
+  },
+
+  async getAnnotations(): Promise<AnnotationsData> {
+    const data = await read<AnnotationsData>(FILES.annotations, DEFAULT_ANNOTATIONS);
+    if (!data || typeof data !== 'object' || !data.books) return DEFAULT_ANNOTATIONS;
+    return { version: data.version ?? 1, books: data.books };
+  },
+
+  async saveAnnotations(annotations: AnnotationsData): Promise<void> {
+    await write(FILES.annotations, annotations);
   },
 };

@@ -1,15 +1,15 @@
 import { create } from 'zustand';
 import { storage } from '@/services/storage';
-import type { AppSettings } from '@/types';
+import type { ResolvedTheme, ThemePreference } from '@/types';
 
 interface ThemeState {
-  theme: AppSettings['theme'];
-  resolvedTheme: 'light' | 'dark';
+  theme: ThemePreference;
+  resolvedTheme: ResolvedTheme;
   initializeTheme: () => Promise<void>;
-  setTheme: (theme: AppSettings['theme']) => Promise<void>;
+  setTheme: (theme: ThemePreference) => Promise<void>;
 }
 
-function resolveThemeMode(t: AppSettings['theme']): 'light' | 'dark' {
+function resolveThemeMode(t: ThemePreference): ResolvedTheme {
   if (t === 'system') {
     return typeof window !== 'undefined' &&
       window.matchMedia('(prefers-color-scheme: dark)').matches
@@ -19,7 +19,7 @@ function resolveThemeMode(t: AppSettings['theme']): 'light' | 'dark' {
   return t;
 }
 
-function applyToDocument(resolved: 'light' | 'dark') {
+function applyToDocument(resolved: ResolvedTheme) {
   if (typeof document !== 'undefined') {
     document.documentElement.setAttribute('data-theme', resolved);
   }
@@ -51,7 +51,7 @@ export const useThemeStore = create<ThemeState>((set, get) => ({
     }
   },
 
-  setTheme: async (newTheme: AppSettings['theme']) => {
+  setTheme: async (newTheme: ThemePreference) => {
     const resolved = resolveThemeMode(newTheme);
     applyToDocument(resolved);
     set({ theme: newTheme, resolvedTheme: resolved });
@@ -64,4 +64,3 @@ export const useThemeStore = create<ThemeState>((set, get) => ({
     }
   },
 }));
-

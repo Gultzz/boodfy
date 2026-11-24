@@ -126,20 +126,76 @@ export interface GlobalStudyStats {
   total: number;
   accuracy: number;
   chaptersStudied: number;
+  chaptersMastered: number;
   booksStudied: number;
 }
 
 export function getGlobalStats(data: StudyData): GlobalStudyStats {
   const books = Object.values(data.books);
   const summary = summarize(books.flatMap((entry) => entry.attempts));
+  const allChapterStats = books.flatMap((entry) => getChapterStats(entry));
+  const chaptersMastered = allChapterStats.filter((c) => c.bestAccuracy >= 0.7).length;
+
   return {
     ...summary,
-    chaptersStudied: books.reduce(
-      (sum, entry) => sum + getChapterStats(entry).length,
-      0,
-    ),
+    chaptersStudied: allChapterStats.length,
+    chaptersMastered,
     booksStudied: books.filter((entry) => entry.attempts.length > 0).length,
   };
+}
+
+export interface AttemptHistoryItem {
+  bookId: string;
+  bookTitle: string;
+  attempt: QuizAttempt;
+  generator: 'local' | 'ai';
+  durationSeconds: number;
+  accuracy: number;
+}
+
+export function getAttemptDurationSeconds(attempt: QuizAttempt): number {
+  if (typeof attempt.durationSeconds === 'number' && attempt.durationSeconds >= 0) {
+    return Math.round(attempt.durationSeconds);
+  }
+  const start = Date.parse(attempt.startedAt);
+  const end = Date.parse(attempt.finishedAt);
+  if (Number.isFinite(start) && Number.isFinite(end) && end >= start) {
+    return Math.max(1, Math.round((end - start) / 1000));
+  }
+  return 0;
+}
+
+export function getAllAttemptsHistory(
+  data: StudyData,
+  filterBookId?: string,
+): AttemptHistoryItem[] {
+  const entries = filterBookId
+    ? data.books[filterBookId]
+      ? [data.books[filterBookId]]
+      : []
+    : Object.values(data.books);
+
+  const items: AttemptHistoryItem[] = [];
+  for (const entry of entries) {
+    for (const attempt of entry.attempts ?? []) {
+      const quiz = entry.quizzes[attempt.chapterId];
+      const generator: 'local' | 'ai' = attempt.generator ?? quiz?.generator ?? 'local';
+      const durationSeconds = getAttemptDurationSeconds(attempt);
+      const accuracy = attempt.total > 0 ? attempt.correctCount / attempt.total : 0;
+      items.push({
+        bookId: entry.bookId,
+        bookTitle: entry.bookTitle,
+        attempt,
+        generator,
+        durationSeconds,
+        accuracy,
+      });
+    }
+  }
+
+  return items.sort(
+    (a, b) => Date.parse(b.attempt.finishedAt || '') - Date.parse(a.attempt.finishedAt || ''),
+  );
 }
 
 /** Capítulos com pior desempenho, de todos os livros, para a lista de revisão */
@@ -172,17 +228,28 @@ export function createAttempt(
   chapter: Chapter,
   answers: QuizAnswer[],
   startedAt: string,
+  generator: 'local' | 'ai' = 'local',
 ): QuizAttempt {
+  const finishedAt = new Date().toISOString();
   const correctCount = answers.filter((answer) => answer.correct).length;
+  const startMs = Date.parse(startedAt);
+  const endMs = Date.parse(finishedAt);
+  const durationSeconds =
+    Number.isFinite(startMs) && Number.isFinite(endMs) && endMs >= startMs
+      ? Math.max(1, Math.round((endMs - startMs) / 1000))
+      : 1;
+
   return {
     id: `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`,
     chapterId: chapter.id,
     chapterTitle: chapter.title,
     startedAt,
-    finishedAt: new Date().toISOString(),
+    finishedAt,
     correctCount,
     total: answers.length,
     answers,
+    generator,
+    durationSeconds,
   };
 }
 
@@ -190,3 +257,15 @@ export function formatPercent(value: number): string {
   return `${Math.round(value * 100)}%`;
 }
 
+export function formatDuration(seconds: number): string {
+  const s = Math.max(0, Math.round(seconds));
+  if (s < 60) return `${s}s`;
+  const mins = Math.floor(s / 60);
+  const remSec = s % 60;
+  if (mins < 60) {
+    return remSec > 0 ? `${mins}m ${remSec}s` : `${mins}m`;
+  }
+  const hours = Math.floor(mins / 60);
+  const remMin = mins % 60;
+  return remMin > 0 ? `${hours}h ${remMin}m` : `${hours}h`;
+}

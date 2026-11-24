@@ -13,6 +13,8 @@ import {
   Info,
   RefreshCw,
   SlidersHorizontal,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
 import { storage } from '@/services/storage';
 import { testAiConnection } from '@/services/quiz-ai';
@@ -154,6 +156,7 @@ export function AiConfigModal({ isOpen, onClose, onSaved }: AiConfigModalProps) 
   const [showAdvancedUrl, setShowAdvancedUrl] = useState(false);
 
   const [apiKey, setApiKey] = useState('');
+  const [showKey, setShowKey] = useState(false);
   const [hasStoredKey, setHasStoredKey] = useState(false);
 
   const [availableModels, setAvailableModels] = useState<AiModelOption[]>(
@@ -251,6 +254,7 @@ export function AiConfigModal({ isOpen, onClose, onSaved }: AiConfigModalProps) 
     });
 
     setApiKey('');
+    setShowKey(false);
   }, [isOpen, fetchModels]);
 
   // Quando o usuário cola/digita uma nova chave de API, busca automaticamente os modelos atualizados na API do provedor
@@ -568,7 +572,7 @@ export function AiConfigModal({ isOpen, onClose, onSaved }: AiConfigModalProps) 
                       <KeyRound size={16} className="ai-key-icon" />
                       <input
                         className="input ai-key-input"
-                        type="password"
+                        type={showKey ? 'text' : 'password'}
                         autoComplete="off"
                         placeholder={
                           hasStoredKey
@@ -581,6 +585,15 @@ export function AiConfigModal({ isOpen, onClose, onSaved }: AiConfigModalProps) 
                           markUnverified();
                         }}
                       />
+                      <button
+                        type="button"
+                        className="btn btn-ghost btn-icon btn-sm"
+                        onClick={() => setShowKey((prev) => !prev)}
+                        title={showKey ? 'Ocultar chave' : 'Exibir chave'}
+                        aria-label={showKey ? 'Ocultar chave' : 'Exibir chave'}
+                      >
+                        {showKey ? <EyeOff size={15} /> : <Eye size={15} />}
+                      </button>
                       {hasStoredKey && (
                         <button
                           type="button"

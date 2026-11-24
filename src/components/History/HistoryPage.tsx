@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
-import { ArrowLeft, Clock, BookOpen, Trash2 } from 'lucide-react';
+import { ArrowLeft, Clock, BookOpen, Trash2, Timer } from 'lucide-react';
 import { storage } from '@/services/storage';
 import { useAppStore } from '@/stores/useAppStore';
+import { useTranslation } from '@/stores/useI18nStore';
+import { formatDuration } from '@/services/study-service';
 import type { HistoryEntry } from '@/types';
 import './HistoryPage.css';
 
@@ -11,6 +13,7 @@ interface HistoryPageProps {
 }
 
 export function HistoryPage({ onBack, onOpenBookById }: HistoryPageProps) {
+  const { t, locale } = useTranslation();
   const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -34,7 +37,7 @@ export function HistoryPage({ onBack, onOpenBookById }: HistoryPageProps) {
 
   const formatDate = (isoStr: string) => {
     try {
-      return new Date(isoStr).toLocaleString('pt-BR', {
+      return new Date(isoStr).toLocaleString(locale, {
         dateStyle: 'short',
         timeStyle: 'short',
       });
@@ -47,15 +50,15 @@ export function HistoryPage({ onBack, onOpenBookById }: HistoryPageProps) {
     <div className="history-page">
       <header className="history-header">
         <div className="history-header-left">
-          <button className="btn btn-ghost btn-icon" onClick={handleBack} title="Voltar">
+          <button className="btn btn-ghost btn-icon" onClick={handleBack} title={t('common.back')}>
             <ArrowLeft size={18} />
           </button>
-          <h2>Histórico de Leitura</h2>
+          <h2>{t('nav.history')}</h2>
         </div>
         {history.length > 0 && (
-          <button className="btn btn-secondary btn-sm" onClick={handleClearHistory}>
+          <button className="btn btn-secondary btn-sm" onClick={() => void handleClearHistory()}>
             <Trash2 size={14} />
-            Limpar Histórico
+            {t('common.delete')}
           </button>
         )}
       </header>
@@ -89,19 +92,33 @@ export function HistoryPage({ onBack, onOpenBookById }: HistoryPageProps) {
                         Última leitura: {formatDate(entry.lastActivityAt)}
                       </span>
                     )}
+                    {typeof entry.durationSeconds === 'number' && entry.durationSeconds > 0 && (
+                      <span
+                        className="history-date"
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}
+                      >
+                        <Timer size={12} /> {formatDuration(entry.durationSeconds)}
+                      </span>
+                    )}
                   </div>
                 </div>
 
                 <div className="history-item-right">
                   <div className="history-pages-info">
-                    <span>Início: Pág. {entry.pageOnOpen}</span>
-                    {entry.pageOnClose && <span>Parada: Pág. {entry.pageOnClose}</span>}
+                    <span>
+                      {t('common.page')} {entry.pageOnOpen}
+                    </span>
+                    {entry.pageOnClose && (
+                      <span>
+                        → {t('common.page')} {entry.pageOnClose}
+                      </span>
+                    )}
                   </div>
                   <button
                     className="btn btn-primary btn-sm"
                     onClick={() => handleOpenBookById(entry.bookId)}
                   >
-                    Ler Novamente
+                    {t('library.resumeReading')}
                   </button>
                 </div>
               </div>

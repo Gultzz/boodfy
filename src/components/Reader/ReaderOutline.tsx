@@ -4,6 +4,7 @@ import { ListOrdered, X } from 'lucide-react';
 import type { Chapter } from '@/types';
 import { buildChapters, chapterForPage } from '@/services/study-chapters';
 import { ChapterOutlineList } from '@/components/common/ChapterOutlineList';
+import { useTranslation } from '@/stores/useI18nStore';
 import './ReaderOutline.css';
 
 interface ReaderOutlineProps {
@@ -11,6 +12,7 @@ interface ReaderOutlineProps {
   totalPages: number;
   currentPage: number;
   onSelectPage: (page: number) => void;
+  onQuizChapter?: (chapter: Chapter) => void;
   onClose: () => void;
 }
 
@@ -19,8 +21,10 @@ export function ReaderOutline({
   totalPages,
   currentPage,
   onSelectPage,
+  onQuizChapter,
   onClose,
 }: ReaderOutlineProps) {
+  const { t } = useTranslation();
   const [chapters, setChapters] = useState<Chapter[] | null>(null);
   const [usedFallback, setUsedFallback] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -61,16 +65,16 @@ export function ReaderOutline({
   );
 
   return (
-    <aside className="outline-sidebar" aria-label="Sumário do livro">
+    <aside className="outline-sidebar" aria-label={t('reader.outline')}>
       <div className="outline-header">
         <div className="outline-header-title">
           <ListOrdered size={15} className="outline-header-icon" />
-          <h4>Sumário</h4>
+          <h4>{t('reader.outline')}</h4>
           {chapters && chapters.length > 0 && (
             <span className="outline-header-count">{chapters.length}</span>
           )}
         </div>
-        <button className="btn btn-ghost btn-icon" onClick={onClose} title="Fechar sumário">
+        <button className="btn btn-ghost btn-icon" onClick={onClose} title={t('common.close')}>
           <X size={16} />
         </button>
       </div>
@@ -78,7 +82,7 @@ export function ReaderOutline({
       {chapters === null && !error && (
         <div className="outline-loading">
           <div className="spinner" />
-          <p>Lendo sumário...</p>
+          <p>{t('reader.loadingDoc')}</p>
         </div>
       )}
 
@@ -94,6 +98,7 @@ export function ReaderOutline({
           activeChapterId={activeChapter?.id ?? null}
           usedFallback={usedFallback}
           onSelectChapter={(chapter) => onSelectPage(chapter.startPage)}
+          onQuizChapter={onQuizChapter}
         />
       )}
     </aside>

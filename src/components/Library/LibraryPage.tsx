@@ -5,6 +5,7 @@ import {
   getLastReadBookFromList,
 } from '@/stores/useLibraryStore';
 import { useAppStore } from '@/stores/useAppStore';
+import { useTranslation } from '@/stores/useI18nStore';
 import { libraryService } from '@/services/library-service';
 import { generateBookShortcutIcon } from '@/services/shortcut-icon';
 import { LibraryHeader } from './LibraryHeader';
@@ -18,7 +19,7 @@ import { RemoveBookModal } from './RemoveBookModal';
 import { UnavailableBookModal } from './UnavailableBookModal';
 import { ManageTagsModal } from './ManageTagsModal';
 import { DragDropOverlay } from './DragDropOverlay';
-import type { Book, Page } from '@/types';
+import type { Book, Page, TagColor } from '@/types';
 import './LibraryPage.css';
 
 interface LibraryPageProps {
@@ -27,6 +28,7 @@ interface LibraryPageProps {
 }
 
 export function LibraryPage({ onOpenBook }: LibraryPageProps) {
+  const { t } = useTranslation();
   const loading = useLibraryStore((s) => s.loading);
   const loadLibrary = useLibraryStore((s) => s.loadLibrary);
   const contextMenu = useLibraryStore((s) => s.contextMenu);
@@ -55,6 +57,7 @@ export function LibraryPage({ onOpenBook }: LibraryPageProps) {
   const feedbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const appOpenBook = useAppStore((s) => s.openBook);
+  const openBookWithPanel = useAppStore((s) => s.openBookWithPanel);
   const handleOpenBook = onOpenBook || appOpenBook;
 
   useEffect(() => {
@@ -133,8 +136,12 @@ export function LibraryPage({ onOpenBook }: LibraryPageProps) {
     await renameBook(bookId, newTitle);
   };
 
-  const handleSaveBookTags = async (bookId: string, tags: string[]) => {
-    await setBookTags(bookId, tags);
+  const handleSaveBookTags = async (
+    bookId: string,
+    tags: string[],
+    tagColors?: Record<string, TagColor>,
+  ) => {
+    await setBookTags(bookId, tags, tagColors);
     setBookToManageTags(null);
   };
 
@@ -187,7 +194,7 @@ export function LibraryPage({ onOpenBook }: LibraryPageProps) {
     return (
       <div className="library-loading">
         <div className="spinner" />
-        <p>Carregando biblioteca...</p>
+        <p>{t('library.loading')}</p>
       </div>
     );
   }
@@ -215,6 +222,7 @@ export function LibraryPage({ onOpenBook }: LibraryPageProps) {
         <LibraryBookList
           books={filteredBooks}
           onOpenBook={handleOpenBook}
+          onOpenStudy={(book) => openBookWithPanel(book, 'study')}
           onContextMenu={handleContextMenu}
           onUnavailableClick={(book) => setUnavailableBook(book)}
         />
@@ -226,6 +234,10 @@ export function LibraryPage({ onOpenBook }: LibraryPageProps) {
           x={contextMenu.x}
           y={contextMenu.y}
           onClose={() => setContextMenu(null)}
+          onOpenBook={handleOpenBook}
+          onOpenNotebook={(book) => openBookWithPanel(book, 'notebook')}
+          onOpenBookmarks={(book) => openBookWithPanel(book, 'bookmarks')}
+          onOpenStudy={(book) => openBookWithPanel(book, 'study')}
           onRename={(book) => setBookToRename(book)}
           onManageTags={(book) => setBookToManageTags(book)}
           onCreateShortcut={handleCreateDesktopShortcut}
@@ -280,4 +292,3 @@ export function LibraryPage({ onOpenBook }: LibraryPageProps) {
     </div>
   );
 }
-

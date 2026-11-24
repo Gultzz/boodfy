@@ -8,6 +8,7 @@ import {
   net,
   safeStorage,
   Menu,
+  powerSaveBlocker,
 } from 'electron';
 import path from 'path';
 import fs from 'fs';
@@ -45,6 +46,29 @@ protocol.registerSchemesAsPrivileged([
 const isDev = !app.isPackaged;
 
 let mainWindow: BrowserWindow | null = null;
+let powerSaveBlockerId: number | null = null;
+
+function enablePowerSaveBlocker(): void {
+  try {
+    if (powerSaveBlockerId === null || !powerSaveBlocker.isStarted(powerSaveBlockerId)) {
+      // 'prevent-display-sleep' impede que a tela desligue e impede a suspensão/hibernação do sistema operacional
+      powerSaveBlockerId = powerSaveBlocker.start('prevent-display-sleep');
+    }
+  } catch (err) {
+    console.error('Erro ao ativar bloqueador de suspensão/tela:', err);
+  }
+}
+
+function disablePowerSaveBlocker(): void {
+  try {
+    if (powerSaveBlockerId !== null && powerSaveBlocker.isStarted(powerSaveBlockerId)) {
+      powerSaveBlocker.stop(powerSaveBlockerId);
+      powerSaveBlockerId = null;
+    }
+  } catch (err) {
+    console.error('Erro ao desativar bloqueador de suspensão/tela:', err);
+  }
+}
 
 const BOOK_ARG_PREFIX = '--open-book=';
 const RELAUNCH_FLAG = '--boodfy-relaunch';
@@ -1519,15 +1543,22 @@ if (!gotSingleInstanceLock) {
     ensureDataDir();
     setupProtocol();
     setupIpcHandlers();
+    enablePowerSaveBlocker();
     createWindow();
   });
 }
 
+app.on('will-quit', () => {
+  disablePowerSaveBlocker();
+});
+
 app.on('window-all-closed', () => {
+  disablePowerSaveBlocker();
   app.quit();
 });
 
 app.on('activate', () => {
+  enablePowerSaveBlocker();
   if (BrowserWindow.getAllWindows().length === 0) {
     createWindow();
   }

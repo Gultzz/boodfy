@@ -1,6 +1,6 @@
 import { storage } from './storage';
 import { generatePdfCover } from './cover-service';
-import type { Book, HistoryEntry, Library } from '@/types';
+import type { Book, HistoryEntry, Library, TagColor } from '@/types';
 
 const coverInFlight = new Set<string>();
 
@@ -33,6 +33,7 @@ export const libraryService = {
         isManaged: false,
         coverDataUrl: null,
         tags: [],
+        readingTimeSeconds: 0,
       };
 
       library.books.push(book);
@@ -75,6 +76,17 @@ export const libraryService = {
     } catch (err) {
       console.warn('Erro ao remover progresso:', err);
     }
+
+    // Clean up annotations
+    try {
+      const annotations = await storage.getAnnotations();
+      if (annotations.books[bookId]) {
+        delete annotations.books[bookId];
+        await storage.saveAnnotations(annotations);
+      }
+    } catch (err) {
+      console.warn('Erro ao remover anotações:', err);
+    }
   },
 
   async renameBook(bookId: string, newTitle: string): Promise<void> {
@@ -107,7 +119,11 @@ export const libraryService = {
     await storage.saveLibrary(library);
   },
 
-  async setBookTags(bookId: string, tags: string[]): Promise<void> {
+  async setBookTags(
+    bookId: string,
+    tags: string[],
+    tagColorsUpdates?: Record<string, TagColor>,
+  ): Promise<void> {
     const library = await storage.getLibrary();
     const index = library.books.findIndex((b) => b.id === bookId);
     if (index === -1) return;
@@ -122,6 +138,16 @@ export const libraryService = {
     }
     library.tags = Array.from(globalTags).sort();
 
+    if (tagColorsUpdates) {
+      library.tagColors = { ...(library.tagColors || {}), ...tagColorsUpdates };
+    }
+
+    await storage.saveLibrary(library);
+  },
+
+  async setTagColor(tag: string, color: TagColor): Promise<void> {
+    const library = await storage.getLibrary();
+    library.tagColors = { ...(library.tagColors || {}), [tag]: color };
     await storage.saveLibrary(library);
   },
 
@@ -141,6 +167,9 @@ export const libraryService = {
   async deleteTagGlobally(tagToDelete: string): Promise<void> {
     const library = await storage.getLibrary();
     library.tags = (library.tags || []).filter((t) => t !== tagToDelete);
+    if (library.tagColors && library.tagColors[tagToDelete]) {
+      delete library.tagColors[tagToDelete];
+    }
     for (const book of library.books) {
       if (book.tags) {
         book.tags = book.tags.filter((t) => t !== tagToDelete);
@@ -198,6 +227,9 @@ export const libraryService = {
       if (!book.totalPages) {
         updates.totalPages = result.totalPages;
       }
+      if (!book.author && result.author) {
+        updates.author = result.author;
+      }
 
       await this.updateBook(book.id, updates);
       return { ...book, ...updates };
@@ -246,15 +278,23 @@ export const libraryService = {
     return this.addBooks(files);
   },
 
-  async updateProgress(bookId: string, currentPage: number, totalPages: number): Promise<void> {
+  async updateProgress(
+    bookId: string,
+    currentPage: number,
+    totalPages: number,
+    addedReadingSeconds = 0,
+  ): Promise<void> {
     const progress = await storage.getProgress();
     const now = new Date().toISOString();
+    const prevSeconds = progress[bookId]?.readingTimeSeconds ?? 0;
+    const nextSeconds = prevSeconds + Math.max(0, Math.round(addedReadingSeconds));
 
     progress[bookId] = {
       currentPage,
       totalPages,
       lastReadAt: now,
       status: totalPages > 0 && currentPage >= totalPages ? 'completed' : 'reading',
+      readingTimeSeconds: nextSeconds,
     };
 
     await storage.saveProgress(progress);
@@ -265,6 +305,7 @@ export const libraryService = {
       totalPages,
       lastReadAt: now,
       status: totalPages > 0 && currentPage >= totalPages ? 'completed' : 'reading',
+      readingTimeSeconds: nextSeconds,
     });
   },
 
@@ -286,6 +327,7 @@ export const libraryService = {
       lastActivityAt: new Date().toISOString(),
       pageOnOpen: page,
       pageOnClose: null,
+      durationSeconds: 0,
     };
     history.entries.unshift(entry);
     // Keep last 500 entries
@@ -295,11 +337,13 @@ export const libraryService = {
     await storage.saveHistory(history);
   },
 
-  async updateLastHistoryEntry(pageOnClose: number): Promise<void> {
+  async updateLastHistoryEntry(pageOnClose: number, addedSeconds = 0): Promise<void> {
     const history = await storage.getHistory();
     if (history.entries.length > 0) {
       history.entries[0].lastActivityAt = new Date().toISOString();
       history.entries[0].pageOnClose = pageOnClose;
+      history.entries[0].durationSeconds =
+        (history.entries[0].durationSeconds ?? 0) + Math.max(0, Math.round(addedSeconds));
       await storage.saveHistory(history);
     }
   },

@@ -75,6 +75,7 @@
   --transition-normal: 200ms cubic-bezier(0.16, 1, 0.3, 1);
 
   --font-sans: 'Inter Variable', Inter, system-ui, sans-serif;
+  --font-serif: Georgia, 'Cambria', 'Times New Roman', serif;
   --font-mono: 'Cascadia Code', 'Consolas', ui-monospace, monospace;
 
   --text-xs: 0.75rem;
@@ -88,30 +89,60 @@
   --page-pad: var(--space-6);
 }
 
+/* Dark AMOLED: preto profundo para conforto noturno e alto contraste */
 [data-theme='dark'] {
-  --hue-background: 240 10% 3.9%;
-  --hue-foreground: 0 0% 98%;
-  --hue-card: 240 10% 6%;
+  --hue-background: 240 10% 2%;
+  --hue-foreground: 0 0% 97%;
+  --hue-card: 240 8% 5.5%;
   --hue-primary: 0 0% 98%;
-  --hue-primary-foreground: 240 5.9% 10%;
-  --hue-secondary: 240 4% 16%;
-  --hue-muted: 240 4% 16%;
-  --hue-muted-foreground: 240 5% 64.9%;
-  --hue-accent: 240 4% 16%;
-  --hue-destructive: 0 62.8% 30.6%;
-  --hue-border: 240 4% 16%;
-  --hue-ring: 240 4.9% 83.9%;
-  --hue-reader: 240 6% 8%;
+  --hue-primary-foreground: 240 6% 8%;
+  --hue-secondary: 240 5% 13%;
+  --hue-muted: 240 5% 12%;
+  --hue-muted-foreground: 240 5% 65%;
+  --hue-accent: 240 5% 14%;
+  --hue-destructive: 0 65% 42%;
+  --hue-border: 240 5% 16%;
+  --hue-ring: 240 5% 84%;
+  --hue-reader: 0 0% 1.5%;
   --hue-success: 142 70% 45%;
   --hue-warning: 32 95% 55%;
 
-  --bg-active: hsl(240 4% 20%);
-  --text-tertiary: hsl(240 5% 46%);
-  --accent-hover: hsl(0 0% 90%);
-  --error: hsl(0 72% 51%);
+  --bg-active: hsl(240 5% 18%);
+  --text-tertiary: hsl(240 5% 48%);
+  --accent-hover: hsl(0 0% 88%);
+  --error: hsl(0 72% 55%);
   --error-bg: hsl(0 40% 12%);
 
-  --shadow-sm: 0 1px 2px hsl(0 0% 0% / 0.24);
-  --shadow-md: 0 2px 8px hsl(0 0% 0% / 0.32);
-  --shadow-lg: 0 4px 16px hsl(0 0% 0% / 0.4);
+  --shadow-sm: 0 1px 2px hsl(0 0% 0% / 0.35);
+  --shadow-md: 0 2px 10px hsl(0 0% 0% / 0.45);
+  --shadow-lg: 0 6px 20px hsl(0 0% 0% / 0.55);
+}
+
+/* Sépia: tons quentes de papel impresso para reduzir fadiga ocular em leituras longas */
+[data-theme='sepia'] {
+  --hue-background: 40 58% 93%;
+  --hue-foreground: 30 33% 18%;
+  --hue-card: 39 56% 90%;
+  --hue-primary: 28 60% 34%;
+  --hue-primary-foreground: 40 65% 96%;
+  --hue-secondary: 38 42% 84%;
+  --hue-muted: 38 40% 85%;
+  --hue-muted-foreground: 31 24% 38%;
+  --hue-accent: 38 44% 83%;
+  --hue-destructive: 4 64% 46%;
+  --hue-border: 36 32% 77%;
+  --hue-ring: 28 60% 34%;
+  --hue-reader: 41 62% 91%;
+  --hue-success: 132 40% 34%;
+  --hue-warning: 30 78% 42%;
+
+  --bg-active: hsl(38 42% 80%);
+  --text-tertiary: hsl(32 20% 48%);
+  --accent-hover: hsl(28 60% 28%);
+  --error: hsl(4 64% 46%);
+  --error-bg: hsl(4 60% 92%);
+
+  --shadow-sm: 0 1px 2px hsl(30 35% 20% / 0.08);
+  --shadow-md: 0 2px 8px hsl(30 35% 20% / 0.1);
+  --shadow-lg: 0 4px 16px hsl(30 35% 20% / 0.14);
 }

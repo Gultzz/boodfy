@@ -1,7 +1,15 @@
 import { create } from 'zustand';
 import { storage } from '@/services/storage';
 import { libraryService } from '@/services/library-service';
-import type { Book, Library, ReadingProgress, FilterMode, SortMode, ViewMode } from '@/types';
+import type {
+  Book,
+  Library,
+  ReadingProgress,
+  FilterMode,
+  SortMode,
+  ViewMode,
+  TagColor,
+} from '@/types';
 
 interface LibraryState {
   library: Library;
@@ -21,7 +29,12 @@ interface LibraryState {
   removeBook: (bookId: string, deleteFile?: boolean) => Promise<void>;
   relocateBook: (bookId: string) => Promise<string | null>;
   renameBook: (bookId: string, newTitle: string) => Promise<void>;
-  setBookTags: (bookId: string, tags: string[]) => Promise<void>;
+  setBookTags: (
+    bookId: string,
+    tags: string[],
+    tagColorsUpdates?: Record<string, TagColor>,
+  ) => Promise<void>;
+  setTagColor: (tag: string, color: TagColor) => Promise<void>;
   deleteTagGlobally: (tag: string) => Promise<void>;
   setViewMode: (mode: ViewMode) => void;
   setFilter: (filter: FilterMode) => void;
@@ -65,9 +78,15 @@ export function filterAndSortBooks(
     result = result.filter((b) => b.tags && b.tags.includes(selectedTag));
   }
 
+  // Search by title, author, or tag
   if (search.trim()) {
     const q = search.toLowerCase().trim();
-    result = result.filter((b) => b.title.toLowerCase().includes(q));
+    result = result.filter(
+      (b) =>
+        b.title.toLowerCase().includes(q) ||
+        (b.author && b.author.toLowerCase().includes(q)) ||
+        (b.tags && b.tags.some((tag) => tag.toLowerCase().includes(q))),
+    );
   }
 
   switch (sort) {
@@ -98,7 +117,7 @@ export function getLastReadBookFromList(books: Book[]): Book | null {
 }
 
 export const useLibraryStore = create<LibraryState>((set, get) => ({
-  library: { books: [], watchFolder: null, tags: [] },
+  library: { books: [], watchFolder: null, tags: [], tagColors: {} },
   progress: {},
   loading: true,
   viewMode: 'grid',
@@ -133,6 +152,7 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
             totalPages: p.totalPages,
             lastReadAt: p.lastReadAt,
             status: p.status,
+            readingTimeSeconds: p.readingTimeSeconds ?? book.readingTimeSeconds ?? 0,
           };
         }
         return book;
@@ -225,15 +245,32 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
     await get().loadLibrary();
   },
 
-  setBookTags: async (bookId: string, tags: string[]) => {
+  setBookTags: async (
+    bookId: string,
+    tags: string[],
+    tagColorsUpdates?: Record<string, TagColor>,
+  ) => {
     set((state) => ({
       library: {
         ...state.library,
         books: state.library.books.map((b) => (b.id === bookId ? { ...b, tags } : b)),
+        tagColors: tagColorsUpdates
+          ? { ...(state.library.tagColors || {}), ...tagColorsUpdates }
+          : state.library.tagColors,
       },
     }));
-    await libraryService.setBookTags(bookId, tags);
+    await libraryService.setBookTags(bookId, tags, tagColorsUpdates);
     await get().loadLibrary();
+  },
+
+  setTagColor: async (tag: string, color: TagColor) => {
+    set((state) => ({
+      library: {
+        ...state.library,
+        tagColors: { ...(state.library.tagColors || {}), [tag]: color },
+      },
+    }));
+    await libraryService.setTagColor(tag, color);
   },
 
   deleteTagGlobally: async (tag: string) => {
@@ -281,4 +318,3 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
     return Array.from(tagsSet).sort();
   },
 }));
-

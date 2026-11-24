@@ -8,6 +8,7 @@ import type { Book } from '@/types';
 interface LibraryBookListProps {
   books: Book[];
   onOpenBook: (book: Book) => void;
+  onOpenStudy: (book: Book) => void;
   onContextMenu: (e: React.MouseEvent, book: Book) => void;
   onUnavailableClick: (book: Book) => void;
 }
@@ -21,6 +22,7 @@ const ESTIMATED_ROW_HEIGHT_LIST = 68;
 export function LibraryBookList({
   books,
   onOpenBook,
+  onOpenStudy,
   onContextMenu,
   onUnavailableClick,
 }: LibraryBookListProps) {
@@ -106,6 +108,7 @@ export function LibraryBookList({
                 <BookListItem
                   book={book}
                   onClick={() => onOpenBook(book)}
+                  onOpenStudy={onOpenStudy}
                   onContextMenu={(e) => onContextMenu(e, book)}
                   onUnavailableClick={onUnavailableClick}
                 />
@@ -152,6 +155,7 @@ export function LibraryBookList({
                   key={book.id}
                   book={book}
                   onClick={() => onOpenBook(book)}
+                  onOpenStudy={onOpenStudy}
                   onContextMenu={(e) => onContextMenu(e, book)}
                   onUnavailableClick={onUnavailableClick}
                 />

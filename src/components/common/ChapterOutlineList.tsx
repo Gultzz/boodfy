@@ -6,11 +6,13 @@ import {
   ChevronsDownUp,
   ChevronsUpDown,
   CornerDownRight,
+  GraduationCap,
   Search,
   X,
 } from 'lucide-react';
 import type { Chapter } from '@/types';
 import { formatChapterPageRange } from '@/services/study-chapters';
+import { useTranslation } from '@/stores/useI18nStore';
 import './ChapterOutlineList.css';
 
 export interface ChapterOutlineBadge {
@@ -25,6 +27,7 @@ interface ChapterOutlineListProps {
   searchPlaceholder?: string;
   emptyMessage?: string;
   onSelectChapter: (chapter: Chapter) => void;
+  onQuizChapter?: (chapter: Chapter) => void;
   getBadge?: (chapter: Chapter) => ChapterOutlineBadge | null | undefined;
 }
 
@@ -53,8 +56,10 @@ export function ChapterOutlineList({
   searchPlaceholder = 'Pesquisar capítulo, subcapítulo ou página...',
   emptyMessage = 'Nenhum capítulo ou subcapítulo encontrado.',
   onSelectChapter,
+  onQuizChapter,
   getBadge,
 }: ChapterOutlineListProps) {
+  const { t } = useTranslation();
   const [query, setQuery] = useState('');
   const [collapsedIds, setCollapsedIds] = useState<Set<string>>(() => new Set());
   const [scrollTop, setScrollTop] = useState(0);
@@ -63,7 +68,6 @@ export function ChapterOutlineList({
   const containerRef = useRef<HTMLDivElement | null>(null);
   const didInitialScrollRef = useRef(false);
 
-  // Mapeia cada capítulo com sua lista de ancestrais (parentIds) para controle perfeito de colapso
   const nodes = useMemo<HierarchyNode[]>(() => {
     const result: HierarchyNode[] = [];
     const parentStack: { level: number; id: string }[] = [];
@@ -106,16 +110,13 @@ export function ChapterOutlineList({
 
   const isSearching = normalizedQuery.length > 0;
 
-  // Filtra itens visíveis levando em consideração colapso manual e pesquisa
   const visibleNodes = useMemo(() => {
     if (!isSearching) {
       return nodes.filter((node) => {
-        // Se qualquer ancestral estiver colapsado, o item fica oculto
         return !node.parentIds.some((parentId) => collapsedIds.has(parentId));
       });
     }
 
-    // Na pesquisa, encontra correspondências diretas
     const directMatches = new Set<string>();
     for (const node of nodes) {
       const titleNorm = normalizeSearchText(node.chapter.title);
@@ -130,7 +131,6 @@ export function ChapterOutlineList({
       }
     }
 
-    // Garante que os ancestrais dos itens encontrados fiquem visíveis como contexto
     const visibleIds = new Set<string>(directMatches);
     for (const node of nodes) {
       if (directMatches.has(node.chapter.id)) {
@@ -143,7 +143,6 @@ export function ChapterOutlineList({
     return nodes.filter((node) => visibleIds.has(node.chapter.id));
   }, [nodes, isSearching, normalizedQuery, pageQuery, collapsedIds]);
 
-  // Mede a altura do container dinamicamente via ResizeObserver
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
@@ -161,7 +160,6 @@ export function ChapterOutlineList({
     return () => observer.disconnect();
   }, []);
 
-  // Rola até o capítulo ativo na primeira abertura
   useEffect(() => {
     if (didInitialScrollRef.current || !activeChapterId || visibleNodes.length === 0) return;
     const targetIndex = visibleNodes.findIndex((n) => n.chapter.id === activeChapterId);
@@ -207,7 +205,6 @@ export function ChapterOutlineList({
     setCollapsedIds(parentIds);
   }, [nodes]);
 
-  // Cálculos de virtualização: apenas renderiza os itens visíveis no viewport + margem overscan
   const totalCount = visibleNodes.length;
   const totalHeight = totalCount * ITEM_HEIGHT;
   const startIndex = Math.max(0, Math.floor(scrollTop / ITEM_HEIGHT) - OVERSCAN);
@@ -228,7 +225,6 @@ export function ChapterOutlineList({
 
   return (
     <div className="chapter-outline-root">
-      {/* Barra de pesquisa unificada e controles rápidos */}
       <div className="chapter-outline-top-bar">
         <div className="chapter-outline-search">
           <Search size={14} className="chapter-outline-search-icon" />
@@ -238,15 +234,14 @@ export function ChapterOutlineList({
             placeholder={searchPlaceholder}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            aria-label="Pesquisar no sumário"
+            aria-label={t('common.search')}
           />
           {query && (
             <button
               type="button"
               className="chapter-outline-search-clear"
               onClick={() => setQuery('')}
-              title="Limpar pesquisa"
-              aria-label="Limpar pesquisa"
+              title={t('common.close')}
             >
               <X size={13} />
             </button>
@@ -258,8 +253,6 @@ export function ChapterOutlineList({
             type="button"
             className="chapter-outline-btn-toggle"
             onClick={anyCollapsed ? expandAll : collapseAll}
-            title={anyCollapsed ? 'Expandir todos os subcapítulos' : 'Recolher todos os subcapítulos'}
-            aria-label={anyCollapsed ? 'Expandir todos' : 'Recolher todos'}
           >
             {anyCollapsed ? <ChevronsUpDown size={14} /> : <ChevronsDownUp size={14} />}
             <span>{anyCollapsed ? 'Expandir tudo' : 'Recolher tudo'}</span>
@@ -279,14 +272,13 @@ export function ChapterOutlineList({
         </p>
       )}
 
-      {/* Lista com Virtualização completa e Scroll garantido */}
       <div
         className="chapter-outline-list"
         ref={containerRef}
         onScroll={handleScroll}
         tabIndex={0}
         role="tree"
-        aria-label="Lista de capítulos"
+        aria-label={t('reader.outline')}
       >
         {totalCount === 0 ? (
           <div className="chapter-outline-empty">{emptyMessage}</div>
@@ -302,7 +294,6 @@ export function ChapterOutlineList({
               const isActive = chapter.id === activeChapterId;
               const badge = getBadge?.(chapter);
 
-              // Indentação proporcional ao nível de profundidade
               const indentPadding = isMain ? 10 : 12 + Math.min(level, 3) * 16;
 
               return (
@@ -322,14 +313,12 @@ export function ChapterOutlineList({
                   onClick={() => onSelectChapter(chapter)}
                   title={`${chapter.title} (${formatChapterPageRange(chapter)})`}
                 >
-                  {/* Botão de colapso ou ícone de hierarquia */}
                   {hasChildren ? (
                     <button
                       type="button"
                       className="chapter-row-toggle-btn"
                       onClick={(e) => toggleCollapse(chapter.id, e)}
-                      title={isCollapsed ? 'Expandir subcapítulos' : 'Recolher subcapítulos'}
-                      aria-label={isCollapsed ? 'Expandir' : 'Recolher'}
+                      aria-label={isCollapsed ? 'Expand' : 'Collapse'}
                     >
                       {isCollapsed ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
                     </button>
@@ -343,10 +332,8 @@ export function ChapterOutlineList({
                     </span>
                   )}
 
-                  {/* Título do item */}
                   <span className="chapter-row-title">{chapter.title}</span>
 
-                  {/* Informações à direita (Páginas e Badge de acerto) */}
                   <div className="chapter-row-meta">
                     <span className="chapter-row-pages">
                       {formatChapterPageRange(chapter)}
@@ -355,6 +342,20 @@ export function ChapterOutlineList({
                       <span className={`chapter-row-badge ${badge.tone}`}>
                         {badge.text}
                       </span>
+                    )}
+                    {onQuizChapter && (
+                      <button
+                        type="button"
+                        className="chapter-row-quiz-btn"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onQuizChapter(chapter);
+                        }}
+                        title={t('reader.generateChapterQuiz')}
+                        aria-label={t('reader.generateChapterQuiz')}
+                      >
+                        <GraduationCap size={13} />
+                      </button>
                     )}
                   </div>
                 </div>

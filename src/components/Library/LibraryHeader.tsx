@@ -9,12 +9,14 @@ import {
 } from 'lucide-react';
 import { useLibraryStore } from '@/stores/useLibraryStore';
 import { useAppStore } from '@/stores/useAppStore';
+import { useTranslation } from '@/stores/useI18nStore';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ICON_MD } from '@/components/ui/icon';
 import { ReadingStreakBadge } from './ReadingStreakBadge';
 
 export function LibraryHeader() {
+  const { t } = useTranslation();
   const search = useLibraryStore((s) => s.search);
   const setSearch = useLibraryStore((s) => s.setSearch);
   const addFiles = useLibraryStore((s) => s.addFiles);
@@ -39,7 +41,7 @@ export function LibraryHeader() {
           <Search size={ICON_MD} className="search-icon" />
           <Input
             className="search-input"
-            placeholder="Pesquisar livros..."
+            placeholder={t('library.searchPlaceholder')}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
@@ -47,11 +49,11 @@ export function LibraryHeader() {
       </div>
       <div className="app-header-right">
         <ReadingStreakBadge />
-        <Button onClick={addFiles} title="Adicionar PDFs">
+        <Button onClick={addFiles} title={t('library.addFilesTitle')}>
           <Plus size={ICON_MD} />
-          Adicionar
+          {t('library.addFiles')}
         </Button>
-        <Button variant="ghost" size="icon" onClick={addFolder} title="Adicionar pasta">
+        <Button variant="ghost" size="icon" onClick={addFolder} title={t('library.addFolder')}>
           <FolderOpen size={ICON_MD} />
         </Button>
         {watchFolder && (
@@ -59,22 +61,22 @@ export function LibraryHeader() {
             variant="ghost"
             size="icon"
             onClick={refreshWatchFolder}
-            title="Atualizar pasta monitorada"
+            title={t('library.refreshFolder')}
           >
             <RefreshCw size={ICON_MD} />
           </Button>
         )}
-        <Button variant="ghost" size="icon" onClick={() => navigateTo('study')} title="Estudos">
+        <Button variant="ghost" size="icon" onClick={() => navigateTo('study')} title={t('nav.study')}>
           <GraduationCap size={ICON_MD} />
         </Button>
-        <Button variant="ghost" size="icon" onClick={() => navigateTo('history')} title="Histórico">
+        <Button variant="ghost" size="icon" onClick={() => navigateTo('history')} title={t('nav.history')}>
           <History size={ICON_MD} />
         </Button>
         <Button
           variant="ghost"
           size="icon"
           onClick={() => navigateTo('settings')}
-          title="Configurações"
+          title={t('nav.settings')}
         >
           <Settings size={ICON_MD} />
         </Button>

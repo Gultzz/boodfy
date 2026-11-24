@@ -366,3 +366,42 @@
   color: var(--text-tertiary);
 }
 
+
+.study-launcher {
+  padding: 16px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.study-launcher-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 220px;
+  flex: 1;
+}
+
+.study-launcher-info > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.study-launcher-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.study-book-select {
+  min-width: 220px;
+  max-width: 320px;
+}
+
+.study-empty-card {
+  padding: 40px 24px;
+}

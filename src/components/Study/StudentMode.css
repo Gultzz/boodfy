@@ -837,3 +837,23 @@
   margin: 0;
 }
 
+
+.student-results-time {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 5px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.student-review-explanation {
+  font-size: 11.5px;
+  line-height: 1.45;
+  color: var(--text-secondary);
+  background-color: var(--bg-tertiary);
+  border-radius: var(--radius-sm);
+  padding: 5px 8px;
+  margin: 3px 0 0;
+}

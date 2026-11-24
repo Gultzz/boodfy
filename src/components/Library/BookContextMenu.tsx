@@ -1,6 +1,18 @@
 import { useEffect, useRef } from 'react';
-import { Pencil, MapPin, Copy, Trash2, Tag, MonitorUp } from 'lucide-react';
+import {
+  BookOpen,
+  Bookmark,
+  GraduationCap,
+  NotebookPen,
+  Pencil,
+  MapPin,
+  Copy,
+  Trash2,
+  Tag,
+  MonitorUp,
+} from 'lucide-react';
 import { libraryService } from '@/services/library-service';
+import { useTranslation } from '@/stores/useI18nStore';
 import type { Book } from '@/types';
 import './BookContextMenu.css';
 
@@ -9,6 +21,10 @@ interface BookContextMenuProps {
   x: number;
   y: number;
   onClose: () => void;
+  onOpenBook: (book: Book) => void;
+  onOpenNotebook: (book: Book) => void;
+  onOpenBookmarks: (book: Book) => void;
+  onOpenStudy: (book: Book) => void;
   onRename: (book: Book) => void;
   onManageTags: (book: Book) => void;
   onCreateShortcut: (book: Book) => void;
@@ -21,12 +37,17 @@ export function BookContextMenu({
   x,
   y,
   onClose,
+  onOpenBook,
+  onOpenNotebook,
+  onOpenBookmarks,
+  onOpenStudy,
   onRename,
   onManageTags,
   onCreateShortcut,
   onRemove,
   onRelocate,
 }: BookContextMenuProps) {
+  const { t } = useTranslation();
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -49,8 +70,8 @@ export function BookContextMenu({
   // Adjust position to stay within viewport
   const style: React.CSSProperties = {
     position: 'fixed',
-    left: Math.min(x, window.innerWidth - 260),
-    top: Math.min(y, window.innerHeight - 250),
+    left: Math.min(x, window.innerWidth - 270),
+    top: Math.min(y, window.innerHeight - 380),
     zIndex: 1001,
   };
 
@@ -81,11 +102,11 @@ export function BookContextMenu({
           onClick={(e) => {
             e.stopPropagation();
             onClose();
-            onRename(book);
+            onOpenBook(book);
           }}
         >
-          <Pencil size={14} />
-          Renomear
+          <BookOpen size={14} />
+          {t('menu.continueReading')}
         </button>
 
         <button
@@ -98,7 +119,61 @@ export function BookContextMenu({
           }}
         >
           <Tag size={14} />
-          Gerenciar tags
+          {t('menu.manageTags')}
+        </button>
+
+        <button
+          type="button"
+          className="context-menu-item"
+          onClick={(e) => {
+            e.stopPropagation();
+            onClose();
+            onOpenNotebook(book);
+          }}
+        >
+          <NotebookPen size={14} />
+          {t('menu.notebook')}
+        </button>
+
+        <button
+          type="button"
+          className="context-menu-item"
+          onClick={(e) => {
+            e.stopPropagation();
+            onClose();
+            onOpenBookmarks(book);
+          }}
+        >
+          <Bookmark size={14} />
+          {t('menu.bookmarks')}
+        </button>
+
+        <button
+          type="button"
+          className="context-menu-item"
+          onClick={(e) => {
+            e.stopPropagation();
+            onClose();
+            onOpenStudy(book);
+          }}
+        >
+          <GraduationCap size={14} />
+          {t('menu.studyMode')}
+        </button>
+
+        <div className="context-menu-divider" />
+
+        <button
+          type="button"
+          className="context-menu-item"
+          onClick={(e) => {
+            e.stopPropagation();
+            onClose();
+            onRename(book);
+          }}
+        >
+          <Pencil size={14} />
+          {t('menu.rename')}
         </button>
 
         <button
@@ -111,7 +186,7 @@ export function BookContextMenu({
           }}
         >
           <MonitorUp size={14} />
-          Criar atalho na Área de Trabalho
+          {t('menu.createShortcut')}
         </button>
 
         <button
@@ -124,13 +199,13 @@ export function BookContextMenu({
           }}
         >
           <MapPin size={14} />
-          Localizar arquivo
+          {t('menu.relocate')}
         </button>
 
         {!book.isManaged && (
           <button type="button" className="context-menu-item" onClick={handleImportCopy}>
             <Copy size={14} />
-            Importar cópia
+            {t('menu.importCopy')}
           </button>
         )}
 
@@ -146,7 +221,7 @@ export function BookContextMenu({
           }}
         >
           <Trash2 size={14} />
-          Remover da biblioteca
+          {t('menu.remove')}
         </button>
       </div>
     </>

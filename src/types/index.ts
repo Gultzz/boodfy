@@ -1,6 +1,37 @@
+export type TagColor =
+  | 'indigo'
+  | 'emerald'
+  | 'amber'
+  | 'rose'
+  | 'blue'
+  | 'violet'
+  | 'orange'
+  | 'teal';
+
+export type AnnotationColor = 'amber' | 'emerald' | 'indigo' | 'rose';
+
+export type AppLanguage = 'pt' | 'en' | 'es' | 'zh' | 'hi' | 'fr';
+
+export type ThemePreference = 'light' | 'dark' | 'sepia' | 'system';
+export type ResolvedTheme = 'light' | 'dark' | 'sepia';
+export type ReadingTheme = 'original' | 'sepia' | 'dark';
+
+export type ReaderViewMode = 'pdf' | 'fluid';
+export type LineSpacing = 'compact' | 'comfortable' | 'wide';
+
+export interface ReaderTypographySettings {
+  defaultViewMode: ReaderViewMode;
+  fontSize: number; // 14..28
+  lineSpacing: LineSpacing;
+  readingTheme: ReadingTheme;
+  /** @deprecated substituído por readingTheme */
+  adaptPdfColors?: boolean;
+}
+
 export interface Book {
   id: string;
   title: string;
+  author?: string;
   filePath: string;
   fileName: string;
   totalPages: number;
@@ -11,12 +42,14 @@ export interface Book {
   isManaged: boolean; // true if copied to managed folder
   coverDataUrl: string | null;
   tags?: string[];
+  readingTimeSeconds?: number;
 }
 
 export interface Library {
   books: Book[];
   watchFolder: string | null;
   tags?: string[];
+  tagColors?: Record<string, TagColor>;
 }
 
 export interface ReadingProgress {
@@ -25,6 +58,7 @@ export interface ReadingProgress {
     totalPages: number;
     lastReadAt: string;
     status: 'not-started' | 'reading' | 'completed';
+    readingTimeSeconds?: number;
   };
 }
 
@@ -35,6 +69,7 @@ export interface HistoryEntry {
   lastActivityAt: string;
   pageOnOpen: number;
   pageOnClose: number | null;
+  durationSeconds?: number;
 }
 
 export interface ReadingHistory {
@@ -57,10 +92,12 @@ export interface AiSettings {
 }
 
 export interface AppSettings {
-  theme: 'light' | 'dark' | 'system';
+  theme: ThemePreference;
+  language: AppLanguage;
   defaultFitMode: 'height' | 'width' | 'manual';
   watchFolder: string | null;
   ai: AiSettings;
+  reader: ReaderTypographySettings;
 }
 
 export type ViewMode = 'grid' | 'list';
@@ -69,6 +106,74 @@ export type SortMode = 'title' | 'lastRead' | 'addedAt';
 export type FitMode = 'height' | 'width' | 'manual';
 
 export type Page = 'library' | 'reader' | 'settings' | 'history' | 'study';
+
+/* ------------------------------------------------------------------ */
+/* Anotações, Marcações (Grifos) e Marcadores de Página                */
+/* ------------------------------------------------------------------ */
+
+export interface HighlightRect {
+  /** Posição horizontal normalizada (0..1) relativa à largura da página */
+  x: number;
+  /** Posição vertical normalizada (0..1) relativa à altura da página */
+  y: number;
+  /** Largura normalizada (0..1) */
+  width: number;
+  /** Altura normalizada (0..1) */
+  height: number;
+}
+
+export interface Highlight {
+  id: string;
+  bookId: string;
+  /** Número sequencial da marcação no livro (#1, #2, #3...) */
+  number: number;
+  pageNumber: number;
+  color: AnnotationColor;
+  mode: ReaderViewMode;
+  /** Retângulo normalizado para grifo visual no PDF Original */
+  rect?: HighlightRect;
+  /** Índice do parágrafo e intervalo para grifo no Texto Fluido */
+  paragraphIndex?: number;
+  startOffset?: number;
+  endOffset?: number;
+  /** Trecho de texto grifado (quando disponível) */
+  quote?: string;
+  createdAt: string;
+}
+
+export interface Note {
+  id: string;
+  bookId: string;
+  pageNumber: number;
+  title?: string;
+  content: string;
+  /** ID da marcação (#N) vinculada, ou null/undefined se ligada apenas à página */
+  highlightId?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Bookmark {
+  id: string;
+  bookId: string;
+  pageNumber: number;
+  title: string;
+  description?: string;
+  color: AnnotationColor;
+  createdAt: string;
+}
+
+export interface BookAnnotations {
+  highlights: Highlight[];
+  notes: Note[];
+  bookmarks: Bookmark[];
+  nextHighlightNumber: number;
+}
+
+export interface AnnotationsData {
+  version: number;
+  books: Record<string, BookAnnotations>;
+}
 
 /* ------------------------------------------------------------------ */
 /* Modo Estudante                                                      */
@@ -118,6 +223,7 @@ export interface Quiz {
   generator: 'local' | 'ai';
   generatorVersion: number;
   generatedAt: string;
+  language?: AppLanguage;
 }
 
 export interface QuizAnswer {
@@ -135,6 +241,8 @@ export interface QuizAttempt {
   correctCount: number;
   total: number;
   answers: QuizAnswer[];
+  generator?: 'local' | 'ai';
+  durationSeconds?: number;
 }
 
 export interface BookStudyData {

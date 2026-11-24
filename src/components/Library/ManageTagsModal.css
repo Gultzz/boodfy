@@ -11,7 +11,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
-  min-height: 38px;
+  min-height: 40px;
   padding: 8px 12px;
   background-color: var(--bg-tertiary);
   border: 1px solid var(--border);
@@ -29,14 +29,27 @@
 .tag-pill {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 5px;
   padding: 3px 8px;
-  border-radius: var(--radius-sm);
+  border-radius: 999px;
   font-size: 12px;
   font-weight: 500;
-  background-color: var(--accent-light, hsl(var(--hue-primary, 220) 90% 56% / 0.15));
-  color: var(--accent);
-  border: 1px solid hsl(var(--hue-primary, 220) 90% 56% / 0.25);
+  border: 1px solid transparent;
+}
+
+.tag-color-dot-btn {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  padding: 0;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: transform var(--transition-fast);
+}
+
+.tag-color-dot-btn:hover {
+  transform: scale(1.25);
 }
 
 .tag-remove-btn {
@@ -60,7 +73,53 @@
 .tag-input-row {
   display: flex;
   gap: 8px;
+  margin-bottom: 12px;
+}
+
+.tag-color-picker {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
   margin-bottom: 16px;
+  padding: 8px 12px;
+  border-radius: var(--radius-md);
+  background-color: var(--bg-tertiary);
+  border: 1px solid var(--border);
+}
+
+.tag-color-picker-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.tag-color-swatches {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.tag-color-swatch {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.tag-color-swatch:hover {
+  transform: scale(1.12);
+}
+
+.tag-color-swatch.active {
+  transform: scale(1.15);
+  box-shadow: 0 0 0 2px var(--bg-secondary), 0 0 0 4px var(--text-primary);
 }
 
 .tags-suggestions-section {
@@ -85,19 +144,15 @@
   align-items: center;
   gap: 4px;
   padding: 4px 10px;
-  border-radius: var(--radius-full, 9999px);
+  border-radius: 9999px;
   font-size: 11px;
   font-weight: 500;
-  background-color: var(--bg-hover);
-  color: var(--text-secondary);
-  border: 1px solid var(--border);
+  border: 1px solid transparent;
   cursor: pointer;
-  transition: all var(--transition-fast);
+  transition: filter var(--transition-fast), transform var(--transition-fast);
 }
 
 .tag-suggestion-chip:hover {
-  background-color: var(--accent-light);
-  color: var(--accent);
-  border-color: var(--accent);
+  filter: brightness(1.08);
+  transform: translateY(-1px);
 }
-

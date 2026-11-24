@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import type { PDFDocumentProxy } from 'pdfjs-dist';
 import { libraryService } from '@/services/library-service';
+import { storage } from '@/services/storage';
 import type { Book, FitMode } from '@/types';
 
 interface UseReaderProps {
@@ -31,11 +32,56 @@ export function useReader({ book, onBack, startPage = null }: UseReaderProps) {
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const bookRef = useRef(book);
   const currentPageRef = useRef(currentPage);
+  const totalPagesRef = useRef(totalPages);
   const startPageRef = useRef(startPage);
+  const pendingSecondsRef = useRef(0);
 
   bookRef.current = book;
   currentPageRef.current = currentPage;
+  totalPagesRef.current = totalPages;
   startPageRef.current = startPage;
+
+  // Load default fit mode from user settings
+  useEffect(() => {
+    storage
+      .getSettings()
+      .then((s) => {
+        if (s.defaultFitMode) setFitMode(s.defaultFitMode);
+      })
+      .catch(() => undefined);
+  }, []);
+
+  // Automatic reading time tracker (zero React re-renders!)
+  useEffect(() => {
+    if (!book) return;
+    pendingSecondsRef.current = 0;
+
+    const flushReadingTime = () => {
+      const delta = pendingSecondsRef.current;
+      if (delta <= 0 || !bookRef.current) return;
+      pendingSecondsRef.current = 0;
+      const page = currentPageRef.current;
+      const total = totalPagesRef.current;
+      void libraryService.updateLastHistoryEntry(page, delta);
+      if (total > 0) {
+        void libraryService.updateProgress(bookRef.current.id, page, total, delta);
+      }
+    };
+
+    const tick = setInterval(() => {
+      if (typeof document === 'undefined' || document.visibilityState === 'visible') {
+        pendingSecondsRef.current += 1;
+        if (pendingSecondsRef.current >= 30) {
+          flushReadingTime();
+        }
+      }
+    }, 1000);
+
+    return () => {
+      clearInterval(tick);
+      flushReadingTime();
+    };
+  }, [book]);
 
   useEffect(() => {
     if (!book) return;
@@ -65,11 +111,13 @@ export function useReader({ book, onBack, startPage = null }: UseReaderProps) {
       }
     })();
 
-    libraryService.addHistoryEntry(book.id, book.title, initialPage);
+    void libraryService.addHistoryEntry(book.id, book.title, initialPage);
 
     return () => {
       if (bookRef.current && currentPageRef.current > 0) {
-        libraryService.updateLastHistoryEntry(currentPageRef.current);
+        const delta = pendingSecondsRef.current;
+        pendingSecondsRef.current = 0;
+        void libraryService.updateLastHistoryEntry(currentPageRef.current, delta);
       }
     };
   }, [book]);
@@ -81,7 +129,12 @@ export function useReader({ book, onBack, startPage = null }: UseReaderProps) {
         clearTimeout(saveTimeoutRef.current);
       }
       saveTimeoutRef.current = setTimeout(() => {
-        libraryService.updateProgress(book.id, page, totalPages);
+        const delta = pendingSecondsRef.current;
+        pendingSecondsRef.current = 0;
+        void libraryService.updateProgress(book.id, page, totalPages, delta);
+        if (delta > 0) {
+          void libraryService.updateLastHistoryEntry(page, delta);
+        }
       }, 300);
     },
     [book, totalPages],
@@ -133,7 +186,7 @@ export function useReader({ book, onBack, startPage = null }: UseReaderProps) {
       if (book) {
         setCurrentPage((prev) => {
           const clamped = Math.max(1, Math.min(prev, numPages));
-          libraryService.updateProgress(book.id, clamped, numPages);
+          void libraryService.updateProgress(book.id, clamped, numPages);
           return clamped;
         });
       }
@@ -169,9 +222,11 @@ export function useReader({ book, onBack, startPage = null }: UseReaderProps) {
       clearTimeout(saveTimeoutRef.current);
       saveTimeoutRef.current = null;
     }
+    const delta = pendingSecondsRef.current;
+    pendingSecondsRef.current = 0;
     if (book && currentPage > 0 && totalPages > 0) {
-      await libraryService.updateProgress(book.id, currentPage, totalPages);
-      await libraryService.updateLastHistoryEntry(currentPage);
+      await libraryService.updateProgress(book.id, currentPage, totalPages, delta);
+      await libraryService.updateLastHistoryEntry(currentPage, delta);
       if (currentPage >= totalPages) {
         await libraryService.markCompleted(book.id);
       }

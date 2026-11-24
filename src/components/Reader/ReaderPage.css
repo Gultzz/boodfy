@@ -28,10 +28,10 @@
 .reader-header-left {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   flex: 0 1 auto;
   min-width: 0;
-  max-width: 25%;
+  max-width: 28%;
   z-index: 2;
 }
 
@@ -40,7 +40,7 @@
   font-size: 14px;
 }
 
-/* Centro Absoluto - Sempre no centro superior exato */
+/* Centro Absoluto */
 .reader-header-center {
   position: absolute;
   left: 50%;
@@ -53,23 +53,102 @@
   z-index: 1;
 }
 
-.reader-header-right.desktop-actions {
+.reader-header-right {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 4px;
   margin-left: auto;
   z-index: 2;
+}
+
+.desktop-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .reader-header-mobile {
   display: none;
   position: relative;
-  margin-left: auto;
-  z-index: 2;
 }
 
-@media (max-width: 1720px) {
-  .reader-header-right.desktop-actions {
+.reader-popover-anchor {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.reader-badge-btn {
+  position: relative;
+}
+
+.reader-mini-count {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  min-width: 15px;
+  height: 15px;
+  padding: 0 3px;
+  border-radius: 999px;
+  background-color: var(--primary);
+  color: var(--primary-foreground);
+  font-size: 9.5px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  pointer-events: none;
+}
+
+/* Grupo Marca-texto no Header */
+.highlighter-toolbar-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border-radius: var(--radius-md);
+  transition: background-color var(--transition-fast);
+}
+
+.highlighter-toolbar-group.active {
+  background-color: var(--secondary);
+  padding-right: 8px;
+}
+
+.header-color-dots {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.highlight-color-dot {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  padding: 0;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.highlight-color-dot.sm {
+  width: 14px;
+  height: 14px;
+}
+
+.highlight-color-dot:hover {
+  transform: scale(1.15);
+}
+
+.highlight-color-dot.active {
+  transform: scale(1.18);
+  box-shadow: 0 0 0 2px var(--bg-secondary), 0 0 0 3.5px var(--text-primary);
+}
+
+@media (max-width: 1120px) {
+  .desktop-actions,
+  .desktop-only-control {
     display: none;
   }
 
@@ -79,41 +158,38 @@
   }
 
   .reader-header-left {
-    max-width: 35%;
+    max-width: 30%;
   }
 }
 
-@media (max-width: 540px) {
+@media (max-width: 680px) {
   .reader-header-left {
     max-width: 22%;
   }
-
-  .page-total {
-    font-size: 11px;
+  .reader-header-center {
+    display: none;
   }
 }
 
-/* Dropdown do Menu Hambúrguer */
+/* Dropdown do Menu Compacto */
 .reader-mobile-dropdown {
   position: absolute;
   top: calc(100% + 8px);
   right: 0;
-  width: 290px;
+  width: 240px;
   max-width: calc(100vw - 24px);
   max-height: calc(100vh - 72px);
   overflow-y: auto;
   background-color: var(--card);
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
-  box-shadow:
-    var(--shadow-lg),
-    0 10px 30px rgba(0, 0, 0, 0.25);
-  padding: 14px;
+  box-shadow: var(--shadow-lg), 0 10px 30px rgba(0, 0, 0, 0.25);
+  padding: 8px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 4px;
   z-index: 100;
-  animation: slideDownFade 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: slideDownFade 0.16s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 @keyframes slideDownFade {
@@ -127,88 +203,10 @@
   }
 }
 
-.mobile-dropdown-section {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.mobile-dropdown-label {
-  font-size: 11px;
-  font-weight: 600;
-  text-transform: uppercase;
-  color: var(--muted-foreground);
-  letter-spacing: 0.05em;
-  padding: 0 4px;
-}
-
-/* Grid para Ajuste de Altura e Largura */
-.mobile-fit-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 6px;
-}
-
-.mobile-pill-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  padding: 7px 10px;
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--text-primary);
-  background-color: var(--secondary);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  transition: all var(--transition-fast);
-}
-
-.mobile-pill-btn:hover {
-  background-color: var(--bg-hover);
-  border-color: var(--primary);
-}
-
-.mobile-pill-btn.active {
-  background-color: var(--primary);
-  color: var(--primary-foreground);
-  border-color: var(--primary);
-}
-
-/* Barra de Zoom */
-.mobile-zoom-bar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-}
-
-.mobile-zoom-bar .btn {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  height: 32px;
-}
-
-.mobile-zoom-reset {
-  flex: 1.2 !important;
-  font-size: 12px;
-  font-weight: 600;
-}
-
-.mobile-dropdown-divider {
-  height: 1px;
-  background-color: var(--border);
-  margin: 2px 0;
-}
-
 .mobile-dropdown-actions {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
 }
 
 .mobile-menu-item {
@@ -225,9 +223,7 @@
   font-weight: 500;
   text-align: left;
   cursor: pointer;
-  transition:
-    background-color var(--transition-fast),
-    color var(--transition-fast);
+  transition: background-color var(--transition-fast), color var(--transition-fast);
 }
 
 .mobile-menu-item:hover {
@@ -246,30 +242,18 @@
 }
 
 .page-input {
-  min-width: 70px;
-  max-width: 70px;
+  min-width: 64px;
+  max-width: 64px;
   text-align: center;
   padding: 4px 6px;
   font-weight: 500;
+  height: 30px;
 }
 
 .page-total {
   white-space: nowrap;
   font-size: 13px;
   color: var(--text-secondary);
-}
-
-.zoom-controls {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.zoom-text {
-  font-size: 12px;
-  color: var(--text-secondary);
-  min-width: 38px;
-  text-align: center;
 }
 
 .divider-v {
@@ -283,7 +267,7 @@
 .reader-body {
   display: flex;
   flex: 1;
-  height: calc(100% - 104px);
+  min-height: 0;
   position: relative;
   overflow: hidden;
 }
@@ -303,24 +287,38 @@
   display: flex;
   justify-content: center;
   align-items: center;
+  flex-shrink: 0;
+}
+
+.pdf-page-stage {
+  position: relative;
+  display: inline-block;
   box-shadow: var(--shadow-lg);
   background-color: #fff;
   border-radius: var(--radius-sm);
-  flex-shrink: 0;
+  overflow: visible;
+}
+
+.pdf-page-canvas-wrap {
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  transition: filter var(--transition-normal);
+}
+
+/* Adaptação inteligente de cores do PDF ao tema escolhido */
+.pdf-page-canvas-wrap.pdf-adapt-dark {
+  filter: invert(0.91) hue-rotate(180deg) contrast(0.94);
+}
+
+.pdf-page-canvas-wrap.pdf-adapt-sepia {
+  filter: sepia(0.32) brightness(0.97) contrast(0.95);
 }
 
 .pdf-page-canvas canvas {
   display: block;
 }
 
-/* Modo Página Dupla: duas páginas lado a lado, cada uma com sua moldura */
-.pdf-page-wrapper.pdf-spread {
-  background-color: transparent;
-  box-shadow: none;
-  border-radius: 0;
-}
-
-/* O react-pdf envolve as páginas em um div interno (react-pdf__Document) */
+/* Modo Página Dupla */
 .pdf-page-wrapper.pdf-spread .react-pdf__Document {
   display: flex;
   align-items: center;
@@ -328,11 +326,145 @@
   gap: 16px;
 }
 
-.pdf-page-wrapper.pdf-spread .pdf-page-canvas {
-  box-shadow: var(--shadow-lg);
-  background-color: #fff;
+/* Camada de Marca-texto Visual no PDF Original */
+.pdf-highlight-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
   border-radius: var(--radius-sm);
-  overflow: hidden;
+}
+
+.pdf-highlight-layer.is-drawing {
+  pointer-events: auto;
+  cursor: crosshair;
+  user-select: none;
+}
+
+.pdf-highlight-box {
+  position: absolute;
+  border-radius: 3px;
+  border: 1.5px solid transparent;
+  pointer-events: auto;
+  cursor: pointer;
+  mix-blend-mode: multiply;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.pdf-page-stage[data-reading-theme='dark'] .pdf-highlight-box {
+  mix-blend-mode: screen;
+}
+
+.pdf-highlight-box:hover,
+.pdf-highlight-box.is-selected {
+  z-index: 8;
+}
+
+.pdf-highlight-box.is-flashing {
+  z-index: 9;
+  animation: highlightPulse 1.5s ease-out 2;
+}
+
+.pdf-highlight-num {
+  position: absolute;
+  top: -11px;
+  left: -4px;
+  font-size: 9.5px;
+  font-weight: 700;
+  color: #fff;
+  padding: 0 5px;
+  height: 15px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+  pointer-events: none;
+  user-select: none;
+}
+
+.pdf-highlight-draft {
+  position: absolute;
+  border-radius: 3px;
+  border: 1.5px dashed;
+  pointer-events: none;
+}
+
+.highlight-quick-popover {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: var(--radius-md);
+  background-color: var(--card);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-lg);
+  mix-blend-mode: normal;
+  white-space: nowrap;
+}
+
+.highlight-quick-colors {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.highlight-quick-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background-color: var(--secondary);
+  color: var(--text-primary);
+  font-size: 11.5px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.highlight-quick-btn:hover {
+  background-color: var(--bg-hover);
+}
+
+.highlight-quick-btn.danger {
+  color: var(--error);
+  border-color: transparent;
+  background: transparent;
+  padding: 4px;
+}
+
+.highlight-quick-btn.danger:hover {
+  background-color: var(--error-bg);
+}
+
+/* Toast flutuante após criar marcação */
+.highlight-saved-toast {
+  position: fixed;
+  bottom: 66px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 80;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 14px;
+  border-radius: var(--radius-lg);
+  background-color: var(--card);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-lg), 0 10px 28px rgba(0, 0, 0, 0.25);
+  animation: slideUpFade 160ms ease-out;
+}
+
+.highlight-toast-label {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
 }
 
 /* Loading & Error States */
@@ -357,7 +489,7 @@
   padding: 40px;
 }
 
-/* Footer / Pagination */
+/* Footer / Pagination + Slider */
 .reader-footer {
   display: flex;
   align-items: center;
@@ -373,26 +505,60 @@
     opacity var(--transition-normal);
 }
 
-.reader-nav-buttons {
+.reader-footer-inner {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 12px;
+  width: 100%;
+  max-width: 560px;
+}
+
+.reader-slider-group {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.reader-page-slider {
+  flex: 1;
+  height: 5px;
+  accent-color: var(--primary);
+  cursor: pointer;
 }
 
 .footer-page-indicator {
-  font-weight: 500;
-  font-size: 13px;
+  font-weight: 600;
+  font-size: 12.5px;
+  white-space: nowrap;
+  color: var(--text-primary);
+  min-width: 62px;
+  text-align: right;
+}
+
+.footer-percent-indicator {
+  font-weight: 600;
+  font-size: 12px;
+  color: var(--text-secondary);
+  min-width: 36px;
 }
 
 .completed-badge {
   position: absolute;
-  right: 24px;
+  right: 20px;
   display: flex;
   align-items: center;
   gap: 6px;
   color: var(--success);
-  font-size: 13px;
-  font-weight: 500;
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+@media (max-width: 900px) {
+  .completed-badge {
+    display: none;
+  }
 }
 
 /* Focus Mode Adjustments */
@@ -405,8 +571,8 @@
   top: 0;
   left: 0;
   right: 0;
-  background-color: rgba(28, 29, 36, 0.95);
-  backdrop-filter: blur(8px);
+  background-color: hsl(var(--hue-card) / 0.94);
+  backdrop-filter: blur(10px);
 }
 
 .reader-page.focus-mode .reader-footer {
@@ -414,8 +580,8 @@
   bottom: 0;
   left: 0;
   right: 0;
-  background-color: rgba(28, 29, 36, 0.95);
-  backdrop-filter: blur(8px);
+  background-color: hsl(var(--hue-card) / 0.94);
+  backdrop-filter: blur(10px);
 }
 
 .reader-page.controls-hidden .reader-header {
@@ -429,4 +595,3 @@
   opacity: 0;
   pointer-events: none;
 }
-

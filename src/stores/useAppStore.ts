@@ -2,9 +2,12 @@ import { create } from 'zustand';
 import { storage } from '@/services/storage';
 import type { Book, Page } from '@/types';
 
+export type ReaderInitialPanel = 'outline' | 'notebook' | 'bookmarks' | 'study' | null;
+
 export interface ReaderEntry {
   page: number | null;
   chapterId: string | null;
+  initialPanel: ReaderInitialPanel;
 }
 
 interface AppState {
@@ -13,12 +16,18 @@ interface AppState {
   readerEntry: ReaderEntry;
   navigateTo: (page: Page) => void;
   openBook: (book: Book) => void;
-  openBookAtPage: (book: Book, page: number, chapterId?: string | null) => void;
+  openBookAtPage: (
+    book: Book,
+    page: number,
+    chapterId?: string | null,
+    initialPanel?: ReaderInitialPanel,
+  ) => void;
+  openBookWithPanel: (book: Book, initialPanel: ReaderInitialPanel) => void;
   openBookById: (bookId: string) => Promise<void>;
   backToLibrary: () => void;
 }
 
-const EMPTY_ENTRY: ReaderEntry = { page: null, chapterId: null };
+const EMPTY_ENTRY: ReaderEntry = { page: null, chapterId: null, initialPanel: null };
 
 export const useAppStore = create<AppState>((set) => ({
   currentPage: 'library',
@@ -33,11 +42,24 @@ export const useAppStore = create<AppState>((set) => ({
     set({ currentBook: book, currentPage: 'reader', readerEntry: EMPTY_ENTRY });
   },
 
-  openBookAtPage: (book: Book, page: number, chapterId: string | null = null) => {
+  openBookAtPage: (
+    book: Book,
+    page: number,
+    chapterId: string | null = null,
+    initialPanel: ReaderInitialPanel = null,
+  ) => {
     set({
       currentBook: book,
       currentPage: 'reader',
-      readerEntry: { page, chapterId },
+      readerEntry: { page, chapterId, initialPanel },
+    });
+  },
+
+  openBookWithPanel: (book: Book, initialPanel: ReaderInitialPanel) => {
+    set({
+      currentBook: book,
+      currentPage: 'reader',
+      readerEntry: { page: null, chapterId: null, initialPanel },
     });
   },
 
@@ -57,7 +79,7 @@ export const useAppStore = create<AppState>((set) => ({
       set({
         currentBook: updatedBook,
         currentPage: 'reader',
-        readerEntry: { page: savedPage, chapterId: null },
+        readerEntry: { page: savedPage, chapterId: null, initialPanel: null },
       });
     }
   },

@@ -7,6 +7,7 @@ import {
   CheckCircle2,
   ChevronDown,
   ChevronUp,
+  Clock,
   GraduationCap,
   ListOrdered,
   Loader2,
@@ -15,19 +16,17 @@ import {
   RotateCcw,
   Settings2,
   Sparkles,
+  Timer,
   WifiOff,
   X,
   XCircle,
 } from 'lucide-react';
 import type { Book, Chapter, Quiz, QuizQuestion } from '@/types';
 import { useStudyStore } from '@/stores/useStudyStore';
-import {
-  buildChapters,
-  chapterForPage,
-  formatChapterPageRange,
-} from '@/services/study-chapters';
+import { buildChapters, chapterForPage, formatChapterPageRange } from '@/services/study-chapters';
 import { ChapterOutlineList } from '@/components/common/ChapterOutlineList';
 import { extractPagesText } from '@/services/pdf-text';
+import { cropPagesToChapter } from '@/services/chapter-cropper';
 import {
   generateLocalQuiz,
   MIN_QUIZ_QUESTIONS,
@@ -37,12 +36,15 @@ import {
 import { generateAiQuiz } from '@/services/quiz-ai';
 import {
   createAttempt,
+  formatDuration,
   formatPercent,
   getBookStats,
   getChapterStats,
 } from '@/services/study-service';
 import { storage } from '@/services/storage';
+import { useTranslation } from '@/stores/useI18nStore';
 import { AiConfigModal } from './AiConfigModal';
+import { QuizHistoryModal } from './QuizHistoryModal';
 import './StudentMode.css';
 
 type Phase = 'overview' | 'preparing' | 'quiz' | 'results';
@@ -110,7 +112,10 @@ export function StudentMode({
   const [aiFailedError, setAiFailedError] = useState<string | null>(null);
   const [prepareLabel, setPrepareLabel] = useState('Lendo o texto do capítulo...');
 
+  const { t, language } = useTranslation();
   const [showAiConfig, setShowAiConfig] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
+  const [lastDurationSeconds, setLastDurationSeconds] = useState(0);
   const [aiEnabled, setAiEnabled] = useState(false);
   const [aiModel, setAiModel] = useState('');
   const [aiVerified, setAiVerified] = useState(false);
@@ -271,7 +276,8 @@ export function StudentMode({
           cached &&
           cached.generatorVersion === QUIZ_GENERATOR_VERSION &&
           cached.questions.length >= MIN_QUIZ_QUESTIONS &&
-          cached.generator === targetMode
+          cached.generator === targetMode &&
+          (cached.language ?? 'pt') === language
         ) {
           setQuiz(cached);
           setAnswers([]);
@@ -303,11 +309,12 @@ export function StudentMode({
       );
 
       try {
-        const pages = await extractPagesText(
+        const rawPages = await extractPagesText(
           pdf,
           selectedChapter.startPage,
           selectedChapter.endPage,
         );
+        const pages = cropPagesToChapter(rawPages, selectedChapter, chapters);
 
         let questions: QuizQuestion[];
         let generator: 'local' | 'ai' = targetMode;
@@ -320,13 +327,12 @@ export function StudentMode({
             questions = await generateAiQuiz(pages, selectedChapter, {
               baseUrl: settings.ai.baseUrl,
               model: settings.ai.model,
+              language,
             });
             generator = 'ai';
           } catch (err) {
             const msg =
-              err instanceof Error
-                ? err.message
-                : 'Não foi possível gerar as perguntas com a IA.';
+              err instanceof Error ? err.message : 'Não foi possível gerar as perguntas com a IA.';
             setAiFailedError(msg);
             setPhase('overview');
             return;
@@ -334,7 +340,7 @@ export function StudentMode({
         } else {
           setPrepareLabel('Gerando perguntas no Modo Offline (Sem IA)...');
           const seedSuffix = forceRegenerate ? String(Date.now()) : '';
-          questions = generateLocalQuiz(pages, selectedChapter, seedSuffix);
+          questions = generateLocalQuiz(pages, selectedChapter, seedSuffix, language);
           generator = 'local';
         }
 
@@ -347,6 +353,7 @@ export function StudentMode({
           generator,
           generatorVersion: QUIZ_GENERATOR_VERSION,
           generatedAt: new Date().toISOString(),
+          language,
         };
 
         await saveQuiz(book, nextQuiz);
@@ -367,7 +374,7 @@ export function StudentMode({
         setPhase('overview');
       }
     },
-    [pdf, selectedChapter, book, saveQuiz],
+    [pdf, selectedChapter, chapters, book, saveQuiz, language],
   );
 
   const selectOption = useCallback(
@@ -390,7 +397,8 @@ export function StudentMode({
 
   const finishQuiz = useCallback(async () => {
     if (!quiz || !selectedChapter) return;
-    const attempt = createAttempt(selectedChapter, answers, startedAt);
+    const attempt = createAttempt(selectedChapter, answers, startedAt, quiz.generator);
+    setLastDurationSeconds(attempt.durationSeconds ?? 1);
     setPhase('results');
     await addAttempt(book, attempt);
   }, [quiz, selectedChapter, answers, startedAt, book, addAttempt]);
@@ -524,6 +532,16 @@ export function StudentMode({
 
         <div className="student-header-actions">
           <button
+            type="button"
+            className="btn btn-ghost btn-icon"
+            onClick={() => setShowHistory(true)}
+            title={t('study.history')}
+            aria-label={t('study.history')}
+          >
+            <Clock size={16} />
+          </button>
+
+          <button
             className={`btn btn-secondary btn-sm student-mode-config-btn ${aiEnabled && aiVerified ? 'ai-on' : 'ai-off'}`}
             onClick={() => setShowAiConfig(true)}
             title="Escolher entre perguntas com IA ou Offline (Sem IA)"
@@ -532,7 +550,11 @@ export function StudentMode({
             <span>{aiEnabled && aiVerified ? 'Com IA' : 'Sem IA'}</span>
           </button>
 
-          <button className="btn btn-ghost btn-icon" onClick={onClose} title="Fechar Modo Estudante">
+          <button
+            className="btn btn-ghost btn-icon"
+            onClick={onClose}
+            title="Fechar Modo Estudante"
+          >
             <X size={18} />
           </button>
         </div>
@@ -547,7 +569,8 @@ export function StudentMode({
               <div>
                 <strong>Modo com Inteligência Artificial ativo ({aiModel})</strong>
                 <span>
-                  As perguntas são criadas por IA analisando o contexto e o entendimento do capítulo.
+                  As perguntas são criadas por IA analisando o contexto e o entendimento do
+                  capítulo.
                 </span>
               </div>
             </>
@@ -557,18 +580,14 @@ export function StudentMode({
               <div>
                 <strong>Modo Offline (Sem IA) ativo</strong>
                 <span>
-                  As perguntas são feitas sem IA (localmente a partir de frases do texto). Ative a IA
-                  para perguntas mais complexas de contexto.
+                  As perguntas são feitas sem IA (localmente a partir de frases do texto). Ative a
+                  IA para perguntas mais complexas de contexto.
                 </span>
               </div>
             </>
           )}
         </div>
-        <button
-          type="button"
-          className="student-banner-link"
-          onClick={() => setShowAiConfig(true)}
-        >
+        <button type="button" className="student-banner-link" onClick={() => setShowAiConfig(true)}>
           {aiEnabled && aiVerified ? 'Alterar' : 'Ativar IA'}
         </button>
       </div>
@@ -697,14 +716,16 @@ export function StudentMode({
                   <>
                     <Sparkles size={15} />
                     <span>
-                      Quiz salvo gerado <strong>com Inteligência Artificial</strong> ({cachedQuiz.questions.length} perguntas).
+                      Quiz salvo gerado <strong>com Inteligência Artificial</strong> (
+                      {cachedQuiz.questions.length} perguntas).
                     </span>
                   </>
                 ) : (
                   <>
                     <WifiOff size={15} />
                     <span>
-                      Quiz salvo gerado no <strong>Modo Offline (Sem IA)</strong> ({cachedQuiz.questions.length} perguntas).
+                      Quiz salvo gerado no <strong>Modo Offline (Sem IA)</strong> (
+                      {cachedQuiz.questions.length} perguntas).
                     </span>
                   </>
                 )}
@@ -759,8 +780,7 @@ export function StudentMode({
                 onClick={() => void startQuiz()}
               >
                 {aiEnabled && aiVerified ? <Sparkles size={16} /> : <Play size={16} />}
-                {cachedQuiz &&
-                cachedQuiz.generator === (aiEnabled && aiVerified ? 'ai' : 'local')
+                {cachedQuiz && cachedQuiz.generator === (aiEnabled && aiVerified ? 'ai' : 'local')
                   ? aiEnabled && aiVerified
                     ? 'Começar Quiz (Gerado com IA)'
                     : 'Começar Quiz (Modo Offline Sem IA)'
@@ -851,7 +871,8 @@ export function StudentMode({
                 <>
                   <WifiOff size={14} />
                   <span>
-                    <strong>Perguntas geradas no Modo Offline (Sem IA)</strong> · Extraídas localmente
+                    <strong>Perguntas geradas no Modo Offline (Sem IA)</strong> · Extraídas
+                    localmente
                   </span>
                 </>
               )}
@@ -946,7 +967,8 @@ export function StudentMode({
                   className="student-page-link"
                   onClick={() => jumpToPdfPage(currentQuestion.sourcePage)}
                 >
-                  <BookOpen size={13} /> Conferir na página {currentQuestion.sourcePage} do PDF ao lado
+                  <BookOpen size={13} /> Conferir na página {currentQuestion.sourcePage} do PDF ao
+                  lado
                 </button>
               </div>
             )}
@@ -959,7 +981,9 @@ export function StudentMode({
                 disabled={selectedIndex === null}
                 onClick={goNext}
               >
-                {questionIndex + 1 === quiz.questions.length ? 'Finalizar e ver resultado' : 'Próxima pergunta'}
+                {questionIndex + 1 === quiz.questions.length
+                  ? 'Finalizar e ver resultado'
+                  : 'Próxima pergunta'}
               </button>
             </div>
           </div>
@@ -971,12 +995,16 @@ export function StudentMode({
               {quiz.generator === 'ai' ? (
                 <>
                   <Sparkles size={14} />
-                  <span>Resultado do quiz gerado <strong>com Inteligência Artificial</strong></span>
+                  <span>
+                    Resultado do quiz gerado <strong>com Inteligência Artificial</strong>
+                  </span>
                 </>
               ) : (
                 <>
                   <WifiOff size={14} />
-                  <span>Resultado do quiz gerado no <strong>Modo Offline (Sem IA)</strong></span>
+                  <span>
+                    Resultado do quiz gerado no <strong>Modo Offline (Sem IA)</strong>
+                  </span>
                 </>
               )}
             </div>
@@ -1008,6 +1036,11 @@ export function StudentMode({
                   {selectedChapter.title} · pp. {selectedChapter.startPage}–
                   {selectedChapter.endPage}
                 </p>
+                {lastDurationSeconds > 0 && (
+                  <span className="student-results-time">
+                    <Timer size={12} /> {t('study.timeSpent')}: {formatDuration(lastDurationSeconds)}
+                  </span>
+                )}
               </div>
             </div>
 
@@ -1038,6 +1071,11 @@ export function StudentMode({
                           </>
                         )}
                       </p>
+                      {question.explanation && (
+                        <p className="student-review-explanation">
+                          <strong>{t('study.explanation')}:</strong> {question.explanation}
+                        </p>
+                      )}
                     </div>
                     <button
                       type="button"
@@ -1069,10 +1107,21 @@ export function StudentMode({
                 <button
                   type="button"
                   className="btn btn-secondary btn-sm"
+                  onClick={() => {
+                    setPhase('overview');
+                    setChapterPickerOpen(true);
+                  }}
+                >
+                  <ListOrdered size={14} />
+                  {t('study.backToChapters')}
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-secondary btn-sm"
                   onClick={() => jumpToPdfPage(selectedChapter.startPage)}
                 >
                   <BookOpen size={14} />
-                  Reler capítulo ao lado
+                  {t('study.rereadChapter')}
                 </button>
               </div>
             </div>
@@ -1087,7 +1136,12 @@ export function StudentMode({
           void refreshAiSettings();
         }}
       />
+
+      <QuizHistoryModal
+        isOpen={showHistory}
+        filterBookId={book.id}
+        onClose={() => setShowHistory(false)}
+      />
     </aside>
   );
 }
-

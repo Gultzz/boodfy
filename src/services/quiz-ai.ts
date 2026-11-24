@@ -1,6 +1,7 @@
-import type { Chapter, QuizQuestion } from '@/types';
+import type { AppLanguage, Chapter, QuizQuestion } from '@/types';
 import type { PageText } from './pdf-text';
 import { MIN_QUIZ_QUESTIONS, QUESTIONS_PER_QUIZ } from './quiz-generator';
+import { getLanguageMeta } from '@/i18n/translations';
 
 /**
  * Limite otimizado de caracteres (~3.000 tokens) para garantir:
@@ -13,6 +14,7 @@ export interface AiQuizConfig {
   baseUrl: string;
   model: string;
   apiKey?: string;
+  language?: AppLanguage;
 }
 
 export class AiQuizError extends Error {
@@ -22,9 +24,6 @@ export class AiQuizError extends Error {
   }
 }
 
-/**
- * Constrói o texto do capítulo cobrindo todas as páginas extraídas de forma equilibrada.
- */
 function buildCorpus(pages: PageText[]): string {
   const validPages = pages.filter((p) => p.text.trim().length > 0);
   if (validPages.length === 0) return '';
@@ -32,9 +31,7 @@ function buildCorpus(pages: PageText[]): string {
   const totalLength = validPages.reduce((sum, p) => sum + p.text.length, 0);
 
   if (totalLength <= MAX_CORPUS_CHARS) {
-    return validPages
-      .map((p) => `[Página ${p.pageNumber}]\n${p.text.trim()}`)
-      .join('\n\n');
+    return validPages.map((p) => `[Página ${p.pageNumber}]\n${p.text.trim()}`).join('\n\n');
   }
 
   const budgetPerPage = Math.max(250, Math.floor(MAX_CORPUS_CHARS / validPages.length));
@@ -49,25 +46,33 @@ function buildCorpus(pages: PageText[]): string {
   return chunks.join('\n\n').slice(0, MAX_CORPUS_CHARS);
 }
 
-function buildMessages(corpus: string, chapter: Chapter): { role: string; content: string }[] {
+function buildMessages(
+  corpus: string,
+  chapter: Chapter,
+  language: AppLanguage = 'pt',
+): { role: string; content: string }[] {
+  const langName = getLanguageMeta(language).aiLanguageName;
+
   const system =
-    'Você é um professor especialista em criar questões de compreensão e retenção de leitura em português do Brasil. ' +
-    'Responda ESTRITAMENTE em JSON válido, sem markdown e sem texto fora do JSON.';
+    `You are an expert teacher creating reading comprehension and retention quiz questions strictly in ${langName}. ` +
+    'Remember that every question must focus primarily on core concepts, deep understanding, and the wisdom the text conveys. ' +
+    'Respond STRICTLY in valid JSON, with no markdown fences and no text outside the JSON.';
 
-  const user = `Com base no capítulo "${chapter.title}", gere exatamente ${QUESTIONS_PER_QUIZ} perguntas de múltipla escolha que avaliem a compreensão real das ideias centrais, causas/efeitos e conceitos do texto (abrangendo início, meio e fim).
+  const user = `Based strictly on chapter "${chapter.title}", generate exactly ${QUESTIONS_PER_QUIZ} multiple-choice questions in ${langName} evaluating real comprehension of central ideas, cause/effect, and concepts from the text (covering beginning, middle, and end).
 
-REGRAS:
-- Não use perguntas de preencher lacuna ("____").
-- "question": pergunta clara e contextualizada.
-- "options": exatamente 4 alternativas objetivas (1 frase cada).
-- "correctIndex": índice da correta (0, 1, 2 ou 3).
-- "sourcePage": número inteiro da página [Página N] de onde veio o conceito.
-- "explanation": explicação direta (1 a 2 frases) justificando a resposta correta.
+RULES:
+- Do NOT use fill-in-the-blank ("____") questions.
+- Every field ("question", "options", "explanation") MUST be written in ${langName}.
+- "question": clear, contextualized question about concepts, understanding, and wisdom conveyed by the text.
+- "options": exactly 4 objective options (1 concise sentence each).
+- "correctIndex": integer index of the right answer (0, 1, 2, or 3).
+- "sourcePage": integer page number from [Página N] where the concept appears.
+- "explanation": direct explanation (1-2 sentences) justifying the correct answer.
 
-FORMATO JSON OBRIGATÓRIO:
+REQUIRED JSON FORMAT:
 {"questions":[{"question":"...","options":["A","B","C","D"],"correctIndex":0,"sourcePage":${chapter.startPage},"explanation":"..."}]}
 
-TEXTO:
+TEXT:
 ${corpus}`;
 
   return [
@@ -132,7 +137,7 @@ function validateQuestions(payload: unknown, chapter: Chapter): QuizQuestion[] {
     const raw = item as RawAiQuestion;
 
     const question = typeof raw.question === 'string' ? raw.question.trim() : '';
-    if (question.length < 10 || question.length > 600) continue;
+    if (question.length < 8 || question.length > 600) continue;
 
     if (!Array.isArray(raw.options)) continue;
     const options = raw.options
@@ -184,7 +189,7 @@ export async function generateAiQuiz(
     throw new AiQuizError('Não há texto legível suficiente neste capítulo para a IA analisar.');
   }
 
-  const messages = buildMessages(corpus, chapter);
+  const messages = buildMessages(corpus, chapter, config.language ?? 'pt');
 
   let result: { ok: boolean; content?: string; error?: string };
   try {
@@ -229,7 +234,8 @@ export async function testAiConnection(
     return {
       ok: false,
       message:
-        result.error || 'O provedor não respondeu corretamente. Verifique sua chave e o modelo selecionado.',
+        result.error ||
+        'O provedor não respondeu corretamente. Verifique sua chave e o modelo selecionado.',
     };
   } catch (err) {
     return {
